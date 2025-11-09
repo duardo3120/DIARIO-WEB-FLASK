@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-br"> <!-- Definindo o idioma como português do Brasil -->
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>DIARIO WEB</title>
+    </head>
+    <body>
+
+        <h2>Login</h2>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div style="color: red; background: #ffe0e0; padding: 10px; border: 1px solid red; margin-bottom: 10px;">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+        <form action="/login" method="POST"> <!-- Formulário de login usando o POST-->
+            <div>
+                <label for="username">Usuário:</label> <!-- Campo para o nome de usuário-->
+
+                <input type="text" id="username" name="username" required> <!-- Campo de entrada para usuário, tipo texto, id sedo requerido.-->
+            </div>
+
+            <br> <div>
+                <label for="password">Senha:</label> <!-- Campo para a senha do usuário-->
+
+                <input type="password" id="password" name="password" required> <!-- Campo de entrada para seha, tipo password para ocultar senha-->
+            </div>
+
+            <br>
+
+            <div>
+                <button type="submit">Entrar</button> <!-- Botão para enviar o formulário-->
+            </div>
+        </form>
+
+        <br>
+        <p>Não tem uma conta? <a href="{{ url_for('mostra_register') }}">Registre-se aqui</a>.</p>
+    </body>
+</html>
