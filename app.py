@@ -1,25 +1,27 @@
 from flask import Flask, render_template, redirect, url_for, flash, session, request
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
-#NOVO UPDATE
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
+import os, datetime
+from dotenv import load_dotenv
+load_dotenv()
 
 
 # Cria a aplicação web
 app = Flask(__name__)
 
 #Configura a chave secreta para sessões e flash messages
-app.config['SECRET_KEY'] = '' #Chave secreta para sessões escolhidas por mim
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY') #Chave secreta para sessões escolhidas por mim
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///diario.db' #Configuração do banco de dados SQLite
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False #Desativa o rastreamento de modificações para economizar recursos
 db = SQLAlchemy(app) #Inicializa o banco de dados com a aplicação Flask
 
-# NOVO - INICIALIZAÇÃO DO GER5ENCIAOR DE LOGIN
+#  - INICIALIZAÇÃO DO GERENCIADOR DE LOGIN
 login_manager = LoginManager()
 login_manager.init_app(app)
 
-#NOVO - CONFIGURAÇÕES DO FLASK-LOGIN
+# - CONFIGURAÇÕES DO FLASK-LOGIN
 #Informar qual a pagina de login
 login_manager.login_view = 'index'
 
@@ -27,12 +29,12 @@ login_manager.login_view = 'index'
 login_manager.login_message = "Não autorizado"
 login_manager.login_message_category = "error"
 
-#NOVO - Função User Loader
+# Função User Loader
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id)) #Convertendo id string para int
 
-#MODIFICADO - Alterações para realizar autenticação e herdar aos usuários com UserMixin
+ #Alterações para realizar autenticação e herdar aos usuários com UserMixin
 class User(db.Model, UserMixin): #Cria a tabela de usuários no banco de dados, adicionado UserMixin para autenticação
     id = db.Column(db.Integer, primary_key=True) #ID do usuário
     username = db.Column(db.String(80), unique=True, nullable=False) #Nome do usuário
@@ -40,6 +42,14 @@ class User(db.Model, UserMixin): #Cria a tabela de usuários no banco de dados, 
 
     def __repr__(self):
         return f'<User {self.username}>'
+    
+class Post(db.Model): #Criar a tabela de posts no banco de dados
+    idPost = db.Column(db.Integer, primary_key=True, nullable=False) #ID do post
+    dataPost = db.Column(db.DateTime, default=datetime.datetime.utcnow) #Data do post
+    content = db.Column(db.Text, nullable=False) #Conteúdo do post
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False) #ID do usuário que criou o post
+    autor = db.relationship('User', backref ='posts')
+    pass #temporario
 
 
 # Cria a primeira pagina
@@ -47,18 +57,15 @@ class User(db.Model, UserMixin): #Cria a tabela de usuários no banco de dados, 
 def index():
     return render_template('index.html') # Renderiza o arquivo index.html e sobe para o servidor.
 
-#MODIFICADO - ROTA PROTEGIDA COM LOGIN REQUIRED
+# - ROTA PROTEGIDA COM LOGIN REQUIRED
 #Rota do dashboard (get) - pagina de sucesso pos login
 @app.route('/dashboard')
-@login_required #novo - Nosso guarda para a rota
+@login_required # - Nosso guarda para a rota
 def dashboard():
-    return (
-        f"<h1>Bem-vindo, {current_user.username}!</h1>" #Usa current_user para pegar o usuário logado
-        f"<p>Login foi um sucesso.</p>"
-        f"<p><a href='{url_for('logout')}'>Sair (Logout)</a></p>" # Link para logout
-    )
+    posts_user = current_user.posts #Consulta todos os posts do usuário logado, usando referencia de relacionamento feito em Post.
+    return render_template('dashboard.html', posts=posts_user) # Renderiza o arquivo dashboard.html
 
-# MODIFICADO - A rota lembra o usuário
+#  - A rota lembra o usuário
 @app.route('/login', methods=['POST']) #Rota para o login com metodo post
 def login():
 
@@ -69,7 +76,7 @@ def login():
     user = User.query.filter_by(username=usuario).first() #Consulta o banco de dados para achar o usuário
 
     if user and check_password_hash(user.password_hash, senha): #Verifica se o usuário existe e se a senha está correta
-        login_user(user) #NOVO  O FLASK lembra dele 
+        login_user(user) #  O FLASK lembra dele 
         # Login bem-sucedido
         return redirect(url_for('dashboard')) #Redireciona para o dashboard
     else:
@@ -77,11 +84,38 @@ def login():
         flash('Nome de usuário ou senha incorretos.', 'error') #Mensagem de erro
         return redirect(url_for('index')) #Redireciona de volta para a página inicial
 
-#NOVO - ROTA DE LOGOUT    
+# - Rota para adicionar post    
+@app.route('/add_post', methods=['POST']) #Rota para adicionar post com metodo post
+@login_required #Protege a rota de adicionar post
+def add_post():
+    conteudo = request.form['content'] #Obtém o conteúdo do post do formulário
+    novo_post = Post(content = conteudo, autor = current_user) #Cria um novo post associado ao usuário logado
+    db.session.add(novo_post) #Adiciona o novo post à sessão do banco de dados
+    db.session.commit() #Salva as alterações no banco de dados
+    flash('Post adicionado com sucesso!', 'success') #Mensagem de sucesso
+    return redirect(url_for('dashboard')) #Redireciona de volta para o dashboard
+
+@app.route('/delete_post/<int:post_id>', methods=['POST']) #Rota para deletar post com metodo post
+@login_required #Protege a rota de deletar post
+def delete_post(post_id): #O end-point precisa pegar o id, então usamos como parametro o post_id
+    post = Post.query.get(post_id) #Consulta o banco de dados para achar o post pelo id
+    
+    if post and post.autor == current_user: #Verifica se o post existe e se o autor é o usuário logado
+        db.session.delete(post) #Deleta o post da sessão do banco de dados
+        db.session.commit() #Salva as alterações no banco de dados
+        flash('Post deletado com sucesso!', 'success') #Mensagem de sucessos
+    else:
+        flash('Post não encontrado ou você não tem permissão para deletá-lo.', 'error') #Mensagem de erro
+    
+    return redirect(url_for('dashboard')) #Redireciona de volta para o dashboard
+    
+
+
+# - ROTA DE LOGOUT    
 @app.route('/logout') #Rota para logout
 @login_required #Protege a rota de logout
 def logout():
-    logout_user() #NOVO - Desloga o usuário
+    logout_user() # - Desloga o usuário
     flash('Você saiu com sucesso.', 'success') #Mensagem de sucesso
     return redirect(url_for('index')) #Redireciona para a página inicial
     
@@ -107,9 +141,9 @@ def register():
     
     password_hash = generate_password_hash(senha)    #Gera o hash da senha
 
-    new_user = User(username=usuario, password_hash=password_hash) #Cria um novo usuário
+    new_user = User(username=usuario, password_hash=password_hash) #Cria um  usuário
 
-    db.session.add(new_user) #Adiciona o novo usuário à sessão do banco de dados
+    db.session.add(new_user) #Adiciona o  usuário à sessão do banco de dados
     db.session.commit() #Salva as alterações no banco de dados
 
     flash('Conta criada com sucesso! Você já pode fazer login.', 'success')

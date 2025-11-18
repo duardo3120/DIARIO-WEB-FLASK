@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu Diário</title>
+</head>
+<body>
+    
+    <h1>Bem-vindo ao seu Diário, {{ current_user.username }}!</h1>
+    <p><a href="{{ url_for('logout') }}">Sair (Logout)</a></p>
+
+    <hr>
+
+    <h2>Escreva um novo post</h2>
+
+    <form action="/add_post" method="POST">
+        <div>
+            <textarea name="content" rows="5" cols="40" placeholder="Conte algo sobre seu dia!" required></textarea>
+        </div>
+        <br>
+        <div>
+            <button type="submit">Salvar post</button>
+        </div>
+    </form>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div style="padding: 10px; margin-bottom: 10px; border: 1px solid transparent; border-radius: 4px; 
+                            background-color: {{ '#d4edda' if category == 'success' else '#f8d7da' }}; 
+                            color: {{ '#155724' if category == 'success' else '#721c24' }};">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <h2>Seus posts:</h2>
+    {% for post in posts %}
+        <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 10px;">
+            <strong>{{ post.dataPost }}</strong>
+            <p>{{ post.content }}</p>
+
+            <form action="{{ url_for('delete_post', post_id=post.idPost) }}" method="POST" style="display: inline;">
+            <button type="submit">Apagar</button>
+            </form>
+        </div>
+    {% else %}
+        <p>Você ainda não escreveu nenhuma entrada. Escreva sua primeira!</p>
+    {% endfor %}
+    </body>
+</html>
