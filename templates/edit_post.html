@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Post - Meu diário</title>
+</head>
+<body>
+    
+    <h1>Editar seu post, {{ current_user.username }}!</h1>
+    <p><a href="{{ url_for('dashboard') }}">Sair (dashboard)</a></p>
+
+    <hr>
+
+    <h2>O que você gostaria de corrigir?</h2>
+
+    <form action="{{ url_for('edit_post', post_id=post.idPost) }}" method="POST">
+        <div>
+            <textarea name="content" rows="5" cols="40" required>{{ post.content }}</textarea> <!-- O name deve ser "content" para coincidir com o que o app.py espera. -->
+        </div>
+        <br>
+        <div>
+            <button type="submit">Salvar alterações!</button>
+        </div>
+    </form>
+</body>
+</html>

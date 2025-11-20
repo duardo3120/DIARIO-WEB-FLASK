@@ -42,6 +42,8 @@
             <strong>{{ post.dataPost }}</strong>
             <p>{{ post.content }}</p>
 
+            <a href="{{url_for('edit_post', post_id=post.idPost) }}">Editar</a>
+
             <form action="{{ url_for('delete_post', post_id=post.idPost) }}" method="POST" style="display: inline;">
             <button type="submit">Apagar</button>
             </form>

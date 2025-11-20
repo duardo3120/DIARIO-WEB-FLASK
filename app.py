@@ -95,6 +95,31 @@ def add_post():
     flash('Post adicionado com sucesso!', 'success') #Mensagem de sucesso
     return redirect(url_for('dashboard')) #Redireciona de volta para o dashboard
 
+@app.route('/edit_post/<int:post_id>', methods=['GET', 'POST']) #Rota para editar post com metodo get
+@login_required #Protege a rota de editar post
+def edit_post(post_id): #O end-point precisa pegar o id, então usamos como parametro o post_id
+    post = Post.query.get(post_id) #Consulta o banco de dados para achar o post pelo id
+    # Verificação de segurança
+    if not post or post.autor != current_user:
+        flash('Post não encontrado ou sem permissão.', 'error')
+        return redirect(url_for('dashboard'))
+
+    #  O SALVAMENTO (POST) ===
+    if request.method == 'POST':
+        # Pegamos o texto novo do formulário
+        post.content = request.form['content'] # 'conteudo' será o name no HTML
+        
+        # Não precisamos de db.session.add() porque o post já existe!
+        # O SQLAlchemy monitora mudanças automaticamente.
+        db.session.commit()
+        
+        flash('Post atualizado com sucesso!', 'success')
+        return redirect(url_for('dashboard'))
+
+    # === PARTE ANTIGA: A VISUALIZAÇÃO (GET) ===
+    # Se não for POST, só mostramos a página com os dados atuais
+    return render_template('edit_post.html', post=post)
+
 @app.route('/delete_post/<int:post_id>', methods=['POST']) #Rota para deletar post com metodo post
 @login_required #Protege a rota de deletar post
 def delete_post(post_id): #O end-point precisa pegar o id, então usamos como parametro o post_id
