@@ -1,0 +1,227 @@
+/* static/css/style.css */
+
+/* --- 1. CONFIGURAÇÕES GERAIS --- */
+* {
+    box-sizing: border-box; /* Garante que tamanhos obedeçam as bordas */
+}
+
+body {
+    font-family: 'Inter', 'Segoe UI', sans-serif; /* Fonte moderna */
+    background-color: #f0f2f5; /* Aquele cinza "Facebook/Twitter" */
+    color: #1c1e21;
+    margin: 0;
+    padding: 0;
+}
+
+/* --- 2. O CABEÇALHO (Topo) --- */
+.top-bar {
+    background-color: #ffffff;
+    height: 60px;
+    display: flex; /* Alinha logo e menu lado a lado */
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.logo {
+    font-weight: bold;
+    font-size: 1.2rem;
+    color: #6c5ce7; /* Roxo estilo Chronicle */
+}
+
+.btn-logout {
+    font-size: 0.9rem;
+    color: #555;
+    text-decoration: none;
+    margin-left: 10px;
+}
+
+/* --- 3. O LAYOUT (A Mágica do Grid) --- */
+.main-container {
+    display: grid;
+    /* Esquerda (250px) | Meio (Flexível) | Direita (300px) */
+    grid-template-columns: 250px 1fr 300px;
+    gap: 20px; /* Espaço entre as colunas */
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 0 20px;
+    align-items: start; /* Impede que colunas estiquem até o rodapé */
+}
+
+/* --- 4. BARRA LATERAL (Esquerda) --- */
+.sidebar nav a {
+    display: block;
+    padding: 10px 15px;
+    color: #65676b;
+    text-decoration: none;
+    font-weight: 500;
+    border-radius: 8px;
+    margin-bottom: 5px;
+    transition: background 0.2s;
+}
+
+.sidebar nav a:hover, .sidebar nav a.active {
+    background-color: #e4e6eb;
+    color: #1877f2; /* Azul destaque */
+}
+
+.sidebar i {
+    margin-right: 10px;
+    width: 20px;
+    text-align: center;
+}
+
+/* --- 5. CONTEÚDO PRINCIPAL (Meio) --- */
+
+/* Cartões (Usado tanto para criar post quanto para exibir) */
+.new-post-card, .post-card, .widget {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+/* Estilo do Formulário de Criação */
+.new-post-card textarea {
+    width: 100%;
+    border: none;
+    resize: none;
+    font-family: inherit;
+    font-size: 1.1rem;
+    outline: none;
+    padding: 10px 0;
+}
+
+.form-footer {
+    border-top: 1px solid #f0f2f5;
+    padding-top: 10px;
+    text-align: right;
+}
+
+button {
+    background-color: #6c5ce7; /* Botão Roxo */
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 20px; /* Botão redondo "pílula" */
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+button:hover {
+    background-color: #5649c0;
+}
+
+/* Estilo dos Posts Existentes */
+.post-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.author-name {
+    font-weight: bold;
+    color: #050505;
+}
+
+.post-date {
+    font-size: 0.8rem;
+    color: #65676b;
+}
+
+.post-content {
+    font-size: 1rem;
+    line-height: 1.5;
+    margin-bottom: 15px;
+}
+
+.post-actions {
+    border-top: 1px solid #f0f2f5;
+    padding-top: 10px;
+    display: flex;
+    gap: 10px;
+}
+
+/* Botões pequenos de ação */
+.btn-small {
+    padding: 5px 12px;
+    font-size: 0.85rem;
+    border-radius: 5px;
+    text-decoration: none;
+    background: #e4e6eb;
+    color: #050505;
+}
+
+.btn-small.btn-danger {
+    background: #ffebe9;
+    color: #ea4335;
+}
+
+/* --- 6. BARRA LATERAL (Direita) --- */
+.right-widgets h3 {
+    font-size: 1rem;
+    color: #65676b;
+    margin-top: 0;
+}
+
+/* --- 7. MENSAGENS FLASH (Alertas) --- */
+.alert {
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    font-weight: 500;
+}
+.alert-success { background: #d1e7dd; color: #0f5132; }
+.alert-error { background: #f8d7da; color: #842029; }
+
+
+/* Estilo para Inputs (Login, Senha) igual ao Textarea */
+input[type="text"],
+input[type="password"] {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px; /* Bordas arredondadas modernas */
+    background-color: #f9f9f9;
+    font-size: 1rem;
+    box-sizing: border-box;
+    outline: none;
+    transition: border 0.3s;
+}
+
+input:focus {
+    border-color: #6c5ce7; /* Roxo quando clica */
+    background-color: white;
+}
+
+/* Container para centralizar Login e Registro na tela */
+.auth-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 80vh; /* Ocupa quase toda a altura da tela */
+    flex-direction: column;
+}
+
+/* Título nas páginas de login */
+.auth-title {
+    color: #2d3436;
+    margin-bottom: 20px;
+    font-weight: 800;
+}
+
+/* Links de texto (ex: "Criar conta") */
+.auth-link {
+    display: block;
+    text-align: center;
+    margin-top: 15px;
+    font-size: 0.9rem;
+    color: #6c5ce7;
+}

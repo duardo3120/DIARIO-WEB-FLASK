@@ -45,7 +45,7 @@ class User(db.Model, UserMixin): #Cria a tabela de usuários no banco de dados, 
     
 class Post(db.Model): #Criar a tabela de posts no banco de dados
     idPost = db.Column(db.Integer, primary_key=True, nullable=False) #ID do post
-    dataPost = db.Column(db.DateTime, default=datetime.datetime.utcnow) #Data do post
+    dataPost = db.Column(db.DateTime, default=datetime.datetime.now) #Data do post, atualizado utc para now
     content = db.Column(db.Text, nullable=False) #Conteúdo do post
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False) #ID do usuário que criou o post
     autor = db.relationship('User', backref ='posts')

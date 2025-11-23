@@ -4,52 +4,84 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Meu Diário</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     
-    <h1>Bem-vindo ao seu Diário, {{ current_user.username }}!</h1>
-    <p><a href="{{ url_for('logout') }}">Sair (Logout)</a></p>
-
-    <hr>
-
-    <h2>Escreva um novo post</h2>
-
-    <form action="/add_post" method="POST">
-        <div>
-            <textarea name="content" rows="5" cols="40" placeholder="Conte algo sobre seu dia!" required></textarea>
+    <header class="top-bar">
+        <div class="logo">📒 Chronicle Clone</div>
+        <div class="user-menu">
+            <span>Olá, {{ current_user.username }}</span>
+            <a href="{{ url_for('logout') }}" class="btn-logout">Sair</a>
         </div>
-        <br>
-        <div>
-            <button type="submit">Salvar post</button>
-        </div>
-    </form>
+    </header>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div style="padding: 10px; margin-bottom: 10px; border: 1px solid transparent; border-radius: 4px; 
-                            background-color: {{ '#d4edda' if category == 'success' else '#f8d7da' }}; 
-                            color: {{ '#155724' if category == 'success' else '#721c24' }};">
-                    {{ message }}
+    <div class="main-container">
+
+        <aside class="sidebar">
+            <nav>
+                <a href="#" class="active"><i class="fas fa-home"></i> Home</a>
+                <a href="#"><i class="fas fa-calendar"></i> Memórias</a>
+                <a href="#"><i class="fas fa-tags"></i> Tags</a>
+            </nav>
+        </aside>
+
+        <main class="content-area">
+            
+            <div class="new-post-card">
+                <h2>Novo Pensamento</h2>
+                <form action="/add_post" method="POST">
+                    <textarea name="content" rows="3" placeholder="O que está acontecendo agora?" required></textarea>
+                    <div class="form-footer">
+                        <button type="submit">Publicar</button>
+                    </div>
+                </form>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <h2>Timeline</h2>
+            {% for post in posts %}
+                <div class="post-card">
+                    <div class="post-header">
+                        <span class="author-name">{{ post.autor.username }}</span>
+                        <span class="post-date">{{ post.dataPost.strftime('%d/%m às %H:%M') }}</span>
+                    </div>
+                    
+                    <p class="post-content">{{ post.content }}</p>
+
+                    <div class="post-actions">
+                        <a href="{{ url_for('edit_post', post_id=post.idPost) }}" class="btn-small">Editar</a>
+                        <form action="{{ url_for('delete_post', post_id=post.idPost) }}" method="POST" style="display: inline;">
+                            <button type="submit" class="btn-small btn-danger">Apagar</button>
+                        </form>
+                    </div>
                 </div>
+            {% else %}
+                <p class="empty-state">Seu diário está vazio. Comece a escrever!</p>
             {% endfor %}
-        {% endif %}
-    {% endwith %}
+        </main>
 
-    <h2>Seus posts:</h2>
-    {% for post in posts %}
-        <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 10px;">
-            <strong>{{ post.dataPost }}</strong>
-            <p>{{ post.content }}</p>
+        <aside class="right-widgets">
+            <div class="widget">
+                <h3>Calendário</h3>
+                <p>📅 (Espaço para calendário)</p>
+            </div>
+            <div class="widget">
+                <h3>Neste dia</h3>
+                <p>Nenhuma lembrança antiga.</p>
+            </div>
+        </aside>
 
-            <a href="{{url_for('edit_post', post_id=post.idPost) }}">Editar</a>
-
-            <form action="{{ url_for('delete_post', post_id=post.idPost) }}" method="POST" style="display: inline;">
-            <button type="submit">Apagar</button>
-            </form>
-        </div>
-    {% else %}
-        <p>Você ainda não escreveu nenhuma entrada. Escreva sua primeira!</p>
-    {% endfor %}
-    </body>
+    </div>
+</body>
 </html>

@@ -1,50 +1,35 @@
-# 📝 Projeto Diário Web em Flask
+# 📒 Chronicle Clone - Diário Web com Flask
 
-Este é um projeto de um diário web simples, desenvolvido em Python usando o framework Flask. O foco principal é um sistema de autenticação e sessão de usuários completo e seguro, construído do zero.
+Um aplicativo de diário pessoal completo, seguro e com design moderno, desenvolvido em Python e Flask.
 
----
+![Status do Projeto](https://img.shields.io/badge/Status-Concluído-green)
 
-## 🚀 Funcionalidades
+## ✨ Funcionalidades
 
-* **Registro de Novos Usuários:** Permite que novos usuários criem uma conta.
-* **Login de Usuários:** Autenticação de usuários existentes.
-* **Armazenamento Seguro de Senhas:** As senhas são "hasheadas" (usando `werkzeug.security`) antes de serem salvas no banco de dados.
-* **Gestão de Sessão:** "Lembra" o usuário que fez login (usando `Flask-Login`).
-* **Rotas Protegidas:** A página `/dashboard` só pode ser acessada por usuários autenticados.
-* **Funcionalidade de Logout:** Permite que o usuário encerre sua sessão com segurança.
-* **Banco de Dados:** Usa SQLite e `Flask-SQLAlchemy` para gerenciar os dados dos usuários.
-
----
+* **🔐 Autenticação Completa:** Registro, Login e Logout seguros com hash de senhas.
+* **📝 CRUD de Postagens:** Criar, Ler, Editar e Apagar entradas do diário.
+* **🎨 Interface Moderna:** Design responsivo inspirado no estilo "Chronicle", usando CSS Grid e Flexbox.
+* **🛡️ Segurança:** Proteção de rotas (apenas usuários logados acessam o painel) e validação de autoria (usuários só editam seus próprios posts).
+* **📅 Formatação de Dados:** Datas e horários ajustados para leitura humana.
 
 ## 🛠️ Tecnologias Utilizadas
 
-* **Python 3**
-* **Flask** (Framework web principal)
-* **Flask-SQLAlchemy** (ORM para interagir com o banco de dados)
-* **Flask-Login** (Gerenciamento de sessão de usuário)
-* **python-dotenv** (Para carregar variáveis de ambiente)
-* **SQLite** (Banco de dados)
-* **HTML** (Estrutura das páginas)
+* **Backend:** Python 3, Flask, Flask-SQLAlchemy, Flask-Login.
+* **Frontend:** HTML5, CSS3 (Grid/Flexbox), Jinja2 Templates.
+* **Banco de Dados:** SQLite.
 
----
-
-## ⚙️ Como Executar o Projeto
-
-Siga estes passos para rodar o projeto localmente:
+## 🚀 Como Rodar o Projeto
 
 1.  **Clone o repositório:**
     ```bash
-    git clone [URL-DO-SEU-REPOSITORIO-AQUI]
-    cd [NOME-DA-PASTA-DO-PROJETO]
+    git clone [https://github.com/SeuUsuario/DIARIO-WEB-FLASK.git](https://github.com/SeuUsuario/DIARIO-WEB-FLASK.git)
+    cd DIARIO-WEB-FLASK
     ```
 
-2.  **Crie e ative um ambiente virtual:**
+2.  **Crie e ative o ambiente virtual:**
     ```bash
-    # Criar o ambiente
     python -m venv venv
-    
-    # Ativar (Windows PowerShell)
-    .\venv\Scripts\Activate
+    .\venv\Scripts\Activate  # No Windows
     ```
 
 3.  **Instale as dependências:**
@@ -52,43 +37,23 @@ Siga estes passos para rodar o projeto localmente:
     pip install -r requirements.txt
     ```
 
-4.  **Configure as Variáveis de Ambiente:**
-    * Crie um arquivo chamado `.env` na raiz do projeto.
-    * Adicione sua chave secreta dentro dele:
-    ```text
-    SECRET_KEY='sua-chave-secreta-aleatoria-e-longa-aqui'
-    ```
+4.  **Configure o ambiente:**
+    * Crie um arquivo `.env` na raiz.
+    * Adicione: `SECRET_KEY='sua-chave-secreta-aqui'`
 
-5.  **Crie o Banco de Dados:**
-    * Execute o shell interativo do Flask:
+5.  **Inicialize o Banco de Dados:**
     ```bash
     flask --app app shell
-    ```
-    * Dentro do shell, digite os seguintes comandos para criar as tabelas e seu primeiro usuário "admin" (senha: "123"):
-    ```python
-    from app import db, User, generate_password_hash
-    
-    # Cria as tabelas
-    db.create_all()
-    
-    # Cria o hash da senha
-    hash_admin = generate_password_hash('123')
-    
-    # Cria o usuário admin
-    admin = User(username='admin', password_hash=hash_admin)
-    
-    # Salva no banco
-    db.session.add(admin)
-    db.session.commit()
-    
-    # Saia do shell
-    exit()
+    >>> from app import db
+    >>> db.create_all()
+    >>> exit()
     ```
 
-6.  **Execute a Aplicação:**
+6.  **Execute:**
     ```bash
     flask --app app run --debug
     ```
+    Acesse `http://127.0.0.1:5000` no seu navegador.
 
-7.  **Acesse no navegador:**
-    Abra `http://127.0.0.1:5000/` no seu navegador.
+---
+Desenvolvido por [Seu Nome]

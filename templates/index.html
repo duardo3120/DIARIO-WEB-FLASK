@@ -1,45 +1,42 @@
 <!DOCTYPE html>
-<html lang="pt-br"> <!-- Definindo o idioma como português do Brasil -->
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>DIARIO WEB</title>
-    </head>
-    <body>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Chronicle Clone</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
 
-        <h2>Login</h2>
+    <div class="auth-wrapper">
+        <h1 class="logo" style="font-size: 2rem; margin-bottom: 20px;">📒 Chronicle Clone</h1>
 
-        {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-        {% for category, message in messages %}
-            <div style="color: red; background: #ffe0e0; padding: 10px; border: 1px solid red; margin-bottom: 10px;">
-                {{ message }}
-            </div>
-        {% endfor %}
-    {% endif %}
-{% endwith %}
+        <div class="new-post-card" style="width: 100%; max-width: 400px; padding: 40px;">
+            <h2 class="auth-title">Bem-vindo de volta</h2>
 
-        <form action="/login" method="POST"> <!-- Formulário de login usando o POST-->
-            <div>
-                <label for="username">Usuário:</label> <!-- Campo para o nome de usuário-->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
 
-                <input type="text" id="username" name="username" required> <!-- Campo de entrada para usuário, tipo texto, id sedo requerido.-->
-            </div>
+            <form action="/login" method="POST">
+                <label for="username" style="display:block; margin-bottom:5px; color:#666;">Usuário</label>
+                <input type="text" id="username" name="username" placeholder="Seu usuário" required>
+                
+                <label for="password" style="display:block; margin-bottom:5px; color:#666;">Senha</label>
+                <input type="password" id="password" name="password" placeholder="Sua senha" required>
+                
+                <button type="submit" style="width: 100%; margin-top: 10px;">Entrar</button>
+            </form>
 
-            <br> <div>
-                <label for="password">Senha:</label> <!-- Campo para a senha do usuário-->
+            <a href="{{ url_for('register') }}" class="auth-link">Não tem uma conta? Crie agora</a>
+        </div>
+    </div>
 
-                <input type="password" id="password" name="password" required> <!-- Campo de entrada para seha, tipo password para ocultar senha-->
-            </div>
-
-            <br>
-
-            <div>
-                <button type="submit">Entrar</button> <!-- Botão para enviar o formulário-->
-            </div>
-        </form>
-
-        <br>
-        <p>Não tem uma conta? <a href="{{ url_for('mostra_register') }}">Registre-se aqui</a>.</p>
-    </body>
+</body>
 </html>
