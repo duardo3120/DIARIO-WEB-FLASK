@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neste Dia - Chronicle Clone</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        /* Reutilizando o estilo blindado das Tags */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; color: #1c1e21; }
+        .container { display: flex; min-height: 100vh; }
+        
+        /* Sidebar */
+        .sidebar { width: 280px; background-color: #ffffff; padding: 20px; display: flex; flex-direction: column; border-right: 1px solid #e4e6eb; position: sticky; top: 0; height: 100vh; }
+        .logo { font-size: 1.5rem; font-weight: 700; color: #6c5ce7; margin-bottom: 40px; display: flex; align-items: center; gap: 10px; }
+        .sidebar nav { display: flex; flex-direction: column; gap: 10px; flex: 1; }
+        .sidebar nav a { text-decoration: none; color: #65676b; padding: 12px 15px; border-radius: 8px; font-weight: 500; transition: all 0.2s; display: flex; align-items: center; gap: 12px; }
+        .sidebar nav a:hover { background-color: #f0f2f5; color: #1c1e21; }
+        .sidebar nav a.active { background-color: #e7f3ff; color: #1877f2; }
+
+        /* Conteúdo */
+        .main-content { flex: 1; padding: 30px 40px; max-width: 800px; margin: 0 auto; }
+        .header-area { display: flex; align-items: center; justify-content: space-between; margin-bottom: 30px; }
+        .back-link { color: #65676b; text-decoration: none; font-size: 0.9rem; display: flex; align-items: center; gap: 5px; }
+
+        /* Card de Memória */
+        .memory-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); margin-bottom: 20px; border-left: 5px solid #6c5ce7; }
+        .memory-meta { font-size: 0.85rem; color: #666; margin-bottom: 10px; display: flex; justify-content: space-between; }
+        .memory-year { background: #6c5ce7; color: white; padding: 2px 8px; border-radius: 4px; font-weight: bold; }
+        .memory-content { font-size: 1.1rem; line-height: 1.5; color: #1c1e21; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <aside class="sidebar">
+            <div class="logo"><i class="fas fa-book-open"></i><span>Chronicle Clone</span></div>
+            <nav>
+                <a href="{{ url_for('dashboard') }}"><i class="fas fa-home"></i> Home</a>
+                <a href="{{ url_for('memories') }}" class="active"><i class="fas fa-calendar-alt"></i> Memórias</a>
+                <a href="{{ url_for('all_tags') }}"><i class="fas fa-tags"></i> Tags</a>
+            </nav>
+            <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid #eee;">
+                <p style="font-size: 0.9rem; color: #666; margin-bottom: 5px;">Olá, <strong>{{ current_user.username }}</strong></p>
+                <a href="{{ url_for('logout') }}" style="color: #ff4757; text-decoration: none; font-size: 0.85rem;">Sair</a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="header-area">
+                <h2>Neste Dia...</h2>
+                <a href="{{ url_for('dashboard') }}" class="back-link"><i class="fas fa-arrow-left"></i> Voltar</a>
+            </div>
+
+            {% if posts %}
+                {% for post in posts %}
+                <div class="memory-card">
+                    <div class="memory-meta">
+                        <span class="memory-year">{{ post.dataPost.year }}</span>
+                        <span>{{ post.dataPost.strftime('%d/%m às %H:%M') }}</span>
+                    </div>
+                    <div class="memory-content">{{ post.content }}</div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div style="text-align: center; padding: 60px; color: #888;">
+                    <i class="fas fa-history" style="font-size: 3rem; margin-bottom: 20px; opacity: 0.3;"></i>
+                    <p style="font-size: 1.2rem;">Nenhuma lembrança encontrada para hoje.</p>
+                    <small>Continue escrevendo! Daqui a um ano você verá seus posts de hoje aqui.</small>
+                </div>
+            {% endif %}
+
+        </main>
+    </div>
+</body>
+</html>

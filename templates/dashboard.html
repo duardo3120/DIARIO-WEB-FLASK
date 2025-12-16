@@ -22,8 +22,8 @@
         <aside class="sidebar">
             <nav>
                 <a href="#" class="active"><i class="fas fa-home"></i> Home</a>
-                <a href="#"><i class="fas fa-calendar"></i> Memórias</a>
-                <a href="#"><i class="fas fa-tags"></i> Tags</a>
+                <a href="{{ url_for('memories') }}"><i class="fas fa-calendar"></i> Memórias</a>
+                <a href="{{ url_for('all_tags') }}"><i class="fas fa-tags"></i> Tags</a>
             </nav>
         </aside>
 
@@ -33,6 +33,10 @@
                 <h2>Novo Pensamento</h2>
                 <form action="/add_post" method="POST">
                     <textarea name="content" rows="3" placeholder="O que está acontecendo agora?" required></textarea>
+                    <div style="margin-top: 10px;">
+                        <input type="text" name="tags" placeholder="Tags (separe por vírgula: pessoal, trabalho...)" 
+                            style="width: 100%; border: 1px solid #ddd; padding: 8px; border-radius: 4px;">
+                    </div>
                     <div class="form-footer">
                         <button type="submit">Publicar</button>
                     </div>
@@ -49,7 +53,16 @@
                 {% endif %}
             {% endwith %}
 
-            <h2>Timeline</h2>
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+                    <h2>{{ title if title else 'Timeline' }}</h2>
+
+                    {% if title %}
+
+                        <a href="{{ url_for('dashboard') }}" style="font-size: 0.9rem; color: #666; text-decoration: none;">
+                         <i class="fas fa-times-circle"></i> Limpar filtro
+                        </a>
+                    {% endif %}
+                </div>
             {% for post in posts %}
                 <div class="post-card">
                     <div class="post-header">
@@ -59,6 +72,16 @@
                     
                     <p class="post-content">{{ post.content }}</p>
 
+                    {% if post.tags %}
+                        <div style="margin-bottom: 15px;">
+                    {% for tag in post.tags %}
+                       <a href="{{ url_for('posts_by_tag', tag_name=tag.name) }}" class="tag-pill">
+                            #{{ tag.name }}
+                        </a>
+                    {% endfor %}
+                        </div>
+                    {% endif %}
+                    
                     <div class="post-actions">
                         <a href="{{ url_for('edit_post', post_id=post.idPost) }}" class="btn-small">Editar</a>
                         <form action="{{ url_for('delete_post', post_id=post.idPost) }}" method="POST" style="display: inline;">
@@ -71,16 +94,69 @@
             {% endfor %}
         </main>
 
-        <aside class="right-widgets">
+    <aside class="right-widgets">
+    
             <div class="widget">
-                <h3>Calendário</h3>
-                <p>📅 (Espaço para calendário)</p>
+                <h3 style="text-align: center; margin-bottom: 15px;">
+                    {{ mes_atual }} / {{ ano_atual }}
+                </h3>
+
+            <div class="calendar-grid">
+                <div class="cal-header">D</div>
+                <div class="cal-header">S</div>
+                <div class="cal-header">T</div>
+                <div class="cal-header">Q</div>
+                <div class="cal-header">Q</div>
+                <div class="cal-header">S</div>
+                <div class="cal-header">S</div>
+                {% for semana in calendario %}
+                    {% for dia in semana %}
+                        {% if dia == 0 %}
+                            <div class="cal-day empty"></div>
+                        {% else %}
+                            <div class="cal-day {{ 'has-post' if dia in dias_ativos else '' }}">
+                                {% if dia in dias_ativos %}
+                                    <a href="{{ url_for('dashboard', data='%04d-%02d-%02d' % (data_atual.year, data_atual.month, dia)) }}" 
+                                        style="text-decoration: none; color: inherit; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;">
+                                            {{ dia }}
+                                    </a>
+                                {% else %}
+                                    {{ dia }}
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                {% endfor %}
             </div>
-            <div class="widget">
-                <h3>Neste dia</h3>
-                <p>Nenhuma lembrança antiga.</p>
-            </div>
-        </aside>
+        </div>
+
+        <div class="card" style="background: white; padding: 20px; border-radius: 12px; margin-top: 20px;">
+            <h3 style="margin-bottom: 15px;">Neste dia</h3>
+
+            {% if memorias %}
+                 <p style="margin-bottom: 10px;">
+                    Você tem <strong>{{ memorias|length }}</strong> lembrança(s) de anos anteriores.
+                </p>
+
+                <div style="background: #f0f2f5; padding: 10px; border-radius: 8px; margin-bottom: 10px; font-style: italic; color: #555; font-size: 0.9rem;">
+                    "{{ memorias[0].content }}"
+                    <br>
+                    <span style="font-weight: bold; font-style: normal; font-size: 0.8rem; color: #6c5ce7;">
+                        — em {{ memorias[0].dataPost.year }}
+                    </span>
+                </div>
+
+            <a href="{{ url_for('memories') }}" style="text-decoration: none; color: #6c5ce7; font-weight: bold; font-size: 0.9rem;">
+                Ver todas as memórias <i class="fas fa-arrow-right"></i>
+            </a>
+
+            {% else %}
+                <p style="color: #888;">Nenhuma lembrança antiga encontrada para hoje.</p>
+            {% endif %}
+
+        </div>
+
+    </aside>
 
     </div>
 </body>

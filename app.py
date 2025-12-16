@@ -1,10 +1,13 @@
 from flask import Flask, render_template, redirect, url_for, flash, session, request
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import extract
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
-import os, datetime
+import os
+from datetime import datetime
 from dotenv import load_dotenv
 load_dotenv()
+import calendar #Módulo para calendários
 
 
 # Cria a aplicação web
@@ -34,6 +37,11 @@ login_manager.login_message_category = "error"
 def load_user(user_id):
     return User.query.get(int(user_id)) #Convertendo id string para int
 
+post_tags = db.Table('post_tags',
+    db.Column('post_id', db.Integer, db.ForeignKey('post.idPost'), primary_key=True),
+    db.Column('tag_id', db.Integer, db.ForeignKey('tag.id'), primary_key=True)
+)
+
  #Alterações para realizar autenticação e herdar aos usuários com UserMixin
 class User(db.Model, UserMixin): #Cria a tabela de usuários no banco de dados, adicionado UserMixin para autenticação
     id = db.Column(db.Integer, primary_key=True) #ID do usuário
@@ -42,14 +50,22 @@ class User(db.Model, UserMixin): #Cria a tabela de usuários no banco de dados, 
 
     def __repr__(self):
         return f'<User {self.username}>'
-    
+
+class Tag(db.Model): #Criar a tabela de tags no banco de dados
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), nullable=False, unique=True)
+
+    def __repr__(self):
+        return f'<Tag {self.name}>'
+
+
 class Post(db.Model): #Criar a tabela de posts no banco de dados
     idPost = db.Column(db.Integer, primary_key=True, nullable=False) #ID do post
-    dataPost = db.Column(db.DateTime, default=datetime.datetime.now) #Data do post, atualizado utc para now
+    dataPost = db.Column(db.DateTime, default=datetime.now) #Data do post, atualizado utc para now
     content = db.Column(db.Text, nullable=False) #Conteúdo do post
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False) #ID do usuário que criou o post
     autor = db.relationship('User', backref ='posts')
-    pass #temporario
+    tags = db.relationship('Tag', secondary=post_tags, backref='posts')
 
 
 # Cria a primeira pagina
@@ -60,10 +76,56 @@ def index():
 # - ROTA PROTEGIDA COM LOGIN REQUIRED
 #Rota do dashboard (get) - pagina de sucesso pos login
 @app.route('/dashboard')
-@login_required # - Nosso guarda para a rota
+@login_required
 def dashboard():
-    posts_user = current_user.posts #Consulta todos os posts do usuário logado, usando referencia de relacionamento feito em Post.
-    return render_template('dashboard.html', posts=posts_user) # Renderiza o arquivo dashboard.html
+    hoje = datetime.now()
+
+    # 2. MEMÓRIAS: Posts de anos anteriores
+    memorias = Post.query.filter(
+        extract('month', Post.dataPost) == hoje.month,
+        extract('day', Post.dataPost) == hoje.day,
+        extract('year', Post.dataPost) != hoje.year, 
+        Post.user_id == current_user.id
+    ).all()
+
+    # 3. CALENDÁRIO: Gerar a matriz do mês atual
+    # Cria uma lista de semanas, ex: [[0,0,1,2,3...], [4,5...]]
+    cal = calendar.monthcalendar(hoje.year, hoje.month)
+
+    # 4. DIAS ATIVOS: Saber quais dias deste mês têm posts (para pintar a bolinha)
+    posts_do_mes = Post.query.filter(
+        extract('month', Post.dataPost) == hoje.month,
+        extract('year', Post.dataPost) == hoje.year,
+        Post.user_id == current_user.id
+    ).all()
+    # Cria uma lista simples com os dias: [14, 15, 20...]
+    dias_ativos = [p.dataPost.day for p in posts_do_mes]
+
+    data_url = request.args.get('data')  # Obtém o parâmetro 'date' da URL
+
+    if data_url:
+        data_filtro = datetime.strptime(data_url, '%Y-%m-%d')
+
+        posts = Post.query.filter(
+            extract('day', Post.dataPost) == data_filtro.day,
+            extract('month', Post.dataPost) == data_filtro.month,
+            extract('year', Post.dataPost) == data_filtro.year,
+            Post.user_id == current_user.id).all()
+        
+        titulo_pagina = f'Posts de {data_filtro.strftime("%d/%m/%Y")}'
+
+    else:
+        posts = Post.query.order_by(Post.dataPost.desc()).all()
+        titulo_pagina = 'Timeline'
+
+    return render_template('dashboard.html', 
+                           posts=posts, 
+                           memorias=memorias,
+                           calendario=cal,
+                           dias_ativos=dias_ativos,
+                           ano_mes=hoje.strftime('%m / %Y'),
+                           title=titulo_pagina,
+                           data_atual=hoje)
 
 #  - A rota lembra o usuário
 @app.route('/login', methods=['POST']) #Rota para o login com metodo post
@@ -89,7 +151,30 @@ def login():
 @login_required #Protege a rota de adicionar post
 def add_post():
     conteudo = request.form['content'] #Obtém o conteúdo do post do formulário
+    tags_texto = request.form.get('tags')  #Obtém as tags do formulário, padrão vazio se não fornecido
     novo_post = Post(content = conteudo, autor = current_user) #Cria um novo post associado ao usuário logado
+
+    # Lógica das Tags
+    if tags_texto:
+        # 1. Separa por vírgula (ex: "vida,  trabalho" vira ["vida", "  trabalho"])
+        nomes_tags = tags_texto.split(',')
+        
+        for nome in nomes_tags:
+            # 2. Limpa espaços extras e deixa minúsculo (ex: "  trabalho" vira "trabalho")
+            nome = nome.strip().lower()
+            
+            if nome: # Se não for vazio
+                # 3. Verifica se a tag já existe no banco
+                tag_existente = Tag.query.filter_by(name=nome).first()
+                
+                if tag_existente:
+                    # Se existe, usa ela
+                    novo_post.tags.append(tag_existente)
+                else:
+                    # Se não existe, cria uma nova
+                    nova_tag = Tag(name=nome)
+                    novo_post.tags.append(nova_tag)
+
     db.session.add(novo_post) #Adiciona o novo post à sessão do banco de dados
     db.session.commit() #Salva as alterações no banco de dados
     flash('Post adicionado com sucesso!', 'success') #Mensagem de sucesso
@@ -173,6 +258,48 @@ def register():
 
     flash('Conta criada com sucesso! Você já pode fazer login.', 'success')
     return redirect(url_for('index'))
+
+@app.route('/tag/<tag_name>') #Rota para ver posts por tag
+@login_required
+def posts_by_tag(tag_name):
+    tag = Tag.query.filter_by(name=tag_name).first_or_404() #Verifica se a tag existe, se não existir retorna 404
+    return render_template('dashboard.html', posts=tag.posts, title=f'Tag: {tag_name}') #Renderiza o dashboard com os posts da tag
     
+@app.route('/tags')
+@login_required
+def all_tags():
+    tags = Tag.query.all() #Consulta todas as tags do banco de dados
+    return render_template('tags.html', tags=tags) #Renderiza a página de tags
+
+@app.route('/delete_tag/<int:id>')
+@login_required
+def delete_tag(id):
+    tag = Tag.query.get_or_404(id) #Consulta a tag pelo id, se não existir retorna 404
+    db.session.delete(tag) #Deleta a tag da sessão do banco de dados
+    db.session.commit() #Salva as alterações no banco de dados
+    flash('Tag deletada com sucesso!', 'success') #Mensagem de sucesso
+    return redirect(url_for('all_tags')) #Redireciona de volta para a página de tags
+
+@app.route('/memories')
+@login_required
+def memories():
+    hoje = datetime.now()
+    
+    # TRADUÇÃO DA QUERY:
+    # Busque Posts ONDE:
+    # 1. O Mês do post é igual ao mês de hoje
+    # 2. E o Dia do post é igual ao dia de hoje
+    # 3. E o Ano do post é DIFERENTE (!=) do ano atual (para ser lembrança, tem que ser antigo!)
+    # 4. E o post pertence ao usuário logado
+    
+    posts = Post.query.filter(
+        extract('month', Post.dataPost) == hoje.month,
+        extract('day', Post.dataPost) == hoje.day,
+        extract('year', Post.dataPost) != hoje.year, 
+        Post.user_id == current_user.id
+    ).all()
+
+    return render_template('memories.html', posts=posts)
+
 if __name__ == '__main__':
     app.run(debug=True)
