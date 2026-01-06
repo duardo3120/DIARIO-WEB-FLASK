@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neste Dia - Chronicle Clone</title>
+    <title>Neste Dia - 📒 Chronos</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.png') }}" type="image/png">
     
     <style>
         /* Reutilizando o estilo blindado das Tags */
@@ -37,7 +38,7 @@
 
     <div class="container">
         <aside class="sidebar">
-            <div class="logo"><i class="fas fa-book-open"></i><span>Chronicle Clone</span></div>
+            <div class="logo"></i><span>📒 Chronos</span></div>
             <nav>
                 <a href="{{ url_for('dashboard') }}"><i class="fas fa-home"></i> Home</a>
                 <a href="{{ url_for('memories') }}" class="active"><i class="fas fa-calendar-alt"></i> Memórias</a>
