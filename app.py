@@ -2,6 +2,7 @@ from flask import Flask, render_template, redirect, url_for, flash, session, req
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import extract
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 import os
 from datetime import datetime
@@ -53,7 +54,8 @@ class User(db.Model, UserMixin): #Cria a tabela de usuários no banco de dados, 
 
 class Tag(db.Model): #Criar a tabela de tags no banco de dados
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), nullable=False, unique=True)
+    name = db.Column(db.String(50), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False) #ID do usuário que criou a tag
 
     def __repr__(self):
         return f'<Tag {self.name}>'
@@ -66,6 +68,7 @@ class Post(db.Model): #Criar a tabela de posts no banco de dados
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False) #ID do usuário que criou o post
     autor = db.relationship('User', backref ='posts')
     tags = db.relationship('Tag', secondary=post_tags, backref='posts')
+    imagem = db.Column(db.String(200), nullable=True)
 
 
 # Cria a primeira pagina
@@ -75,12 +78,16 @@ def index():
 
 # - ROTA PROTEGIDA COM LOGIN REQUIRED
 #Rota do dashboard (get) - pagina de sucesso pos login
+# Rota do dashboard (get) - pagina de sucesso pos login
 @app.route('/dashboard')
 @login_required
 def dashboard():
+
+    page = request.args.get('page', 1, type=int)  # Pega o número da página da URL, padrão 1
+
     hoje = datetime.now()
 
-    # 2. MEMÓRIAS: Posts de anos anteriores
+    # --- 1. MEMÓRIAS E CALENDÁRIO (Mantemos isto igual) ---
     memorias = Post.query.filter(
         extract('month', Post.dataPost) == hoje.month,
         extract('day', Post.dataPost) == hoje.day,
@@ -88,36 +95,47 @@ def dashboard():
         Post.user_id == current_user.id
     ).all()
 
-    # 3. CALENDÁRIO: Gerar a matriz do mês atual
-    # Cria uma lista de semanas, ex: [[0,0,1,2,3...], [4,5...]]
     cal = calendar.monthcalendar(hoje.year, hoje.month)
 
-    # 4. DIAS ATIVOS: Saber quais dias deste mês têm posts (para pintar a bolinha)
     posts_do_mes = Post.query.filter(
         extract('month', Post.dataPost) == hoje.month,
         extract('year', Post.dataPost) == hoje.year,
         Post.user_id == current_user.id
     ).all()
-    # Cria uma lista simples com os dias: [14, 15, 20...]
     dias_ativos = [p.dataPost.day for p in posts_do_mes]
 
-    data_url = request.args.get('data')  # Obtém o parâmetro 'date' da URL
+    # --- 2. LÓGICA DE FILTRAGEM (Aqui entra a novidade) ---
+    
+    # Tenta obter o termo de pesquisa 'q' e a data 'data'
+    busca = request.args.get('q')
+    data_url = request.args.get('data') 
 
-    if data_url:
+    if busca:
+        # SE houver pesquisa: filtra pelo conteúdo
+        posts = Post.query.filter(
+            Post.content.contains(busca), # Procura o termo dentro do conteúdo
+            Post.user_id == current_user.id
+        ).order_by(Post.dataPost.desc()).paginate(page=page, per_page=5)
+        
+        titulo_pagina = f'Resultados para "{busca}"'
+
+    elif data_url:
+        # SE houver data selecionada no calendário
         data_filtro = datetime.strptime(data_url, '%Y-%m-%d')
-
         posts = Post.query.filter(
             extract('day', Post.dataPost) == data_filtro.day,
             extract('month', Post.dataPost) == data_filtro.month,
             extract('year', Post.dataPost) == data_filtro.year,
-            Post.user_id == current_user.id).all()
-        
+            Post.user_id == current_user.id
+        ).all()
         titulo_pagina = f'Posts de {data_filtro.strftime("%d/%m/%Y")}'
 
     else:
-        posts = Post.query.order_by(Post.dataPost.desc()).all()
+        # SE NÃO houver nada: mostra tudo
+        posts = Post.query.order_by(Post.dataPost.desc()).paginate(page=page, per_page=5)
         titulo_pagina = 'Timeline'
 
+    # Retorna tudo para o template
     return render_template('dashboard.html', 
                            posts=posts, 
                            memorias=memorias,
@@ -125,7 +143,9 @@ def dashboard():
                            dias_ativos=dias_ativos,
                            ano_mes=hoje.strftime('%m / %Y'),
                            title=titulo_pagina,
-                           data_atual=hoje)
+                           data_atual=hoje,
+                           mes_atual=hoje.month,
+                           ano_atual=hoje.year)
 
 #  - A rota lembra o usuário
 @app.route('/login', methods=['POST']) #Rota para o login com metodo post
@@ -147,38 +167,49 @@ def login():
         return redirect(url_for('index')) #Redireciona de volta para a página inicial
 
 # - Rota para adicionar post    
-@app.route('/add_post', methods=['POST']) #Rota para adicionar post com metodo post
-@login_required #Protege a rota de adicionar post
+@app.route('/add_post', methods=['POST'])
+@login_required
 def add_post():
-    conteudo = request.form['content'] #Obtém o conteúdo do post do formulário
-    tags_texto = request.form.get('tags')  #Obtém as tags do formulário, padrão vazio se não fornecido
-    novo_post = Post(content = conteudo, autor = current_user) #Cria um novo post associado ao usuário logado
+    conteudo = request.form['content']
+    tags_texto = request.form.get('tags')
+    
+    # 1. PEGAR O ARQUIVO
+    arquivo = request.files['imagem'] # 'imagem' deve ser igual ao name no HTML
+    nome_imagem = None # Começa vazio caso não tenha foto
 
-    # Lógica das Tags
-    if tags_texto:
-        # 1. Separa por vírgula (ex: "vida,  trabalho" vira ["vida", "  trabalho"])
-        nomes_tags = tags_texto.split(',')
+    # 2. VERIFICAR SE TEM ARQUIVO E SE ELE TEM NOME
+    if arquivo and arquivo.filename != '':
+        # Limpa o nome para segurança (ex: "Minha Foto!.jpg" vira "Minha_Foto.jpg")
+        nome_seguro = secure_filename(arquivo.filename)
         
+        # Salva o arquivo na pasta do projeto
+        # Certifique-se de que a pasta 'static/uploads' existe!
+        caminho_salvar = os.path.join('static/uploads', nome_seguro)
+        arquivo.save(caminho_salvar)
+        
+        # Guarda apenas o nome limpo para salvar no banco
+        nome_imagem = nome_seguro
+
+    # 3. CRIAR O POST (Agora passando a imagem também)
+    novo_post = Post(content=conteudo, imagem=nome_imagem, autor=current_user)
+
+    # Lógica das Tags (igual ao que você já tinha)
+    if tags_texto:
+        nomes_tags = tags_texto.split(',')
         for nome in nomes_tags:
-            # 2. Limpa espaços extras e deixa minúsculo (ex: "  trabalho" vira "trabalho")
             nome = nome.strip().lower()
-            
-            if nome: # Se não for vazio
-                # 3. Verifica se a tag já existe no banco
-                tag_existente = Tag.query.filter_by(name=nome).first()
-                
+            if nome:
+                tag_existente = Tag.query.filter_by(name=nome, user_id=current_user.id).first()
                 if tag_existente:
-                    # Se existe, usa ela
                     novo_post.tags.append(tag_existente)
                 else:
-                    # Se não existe, cria uma nova
-                    nova_tag = Tag(name=nome)
+                    nova_tag = Tag(name=nome, user_id=current_user.id)
                     novo_post.tags.append(nova_tag)
 
-    db.session.add(novo_post) #Adiciona o novo post à sessão do banco de dados
-    db.session.commit() #Salva as alterações no banco de dados
-    flash('Post adicionado com sucesso!', 'success') #Mensagem de sucesso
-    return redirect(url_for('dashboard')) #Redireciona de volta para o dashboard
+    db.session.add(novo_post)
+    db.session.commit()
+    flash('Post adicionado com sucesso!', 'success')
+    return redirect(url_for('dashboard'))
 
 @app.route('/edit_post/<int:post_id>', methods=['GET', 'POST']) #Rota para editar post com metodo get
 @login_required #Protege a rota de editar post
@@ -268,8 +299,12 @@ def posts_by_tag(tag_name):
 @app.route('/tags')
 @login_required
 def all_tags():
-    tags = Tag.query.all() #Consulta todas as tags do banco de dados
-    return render_template('tags.html', tags=tags) #Renderiza a página de tags
+    tags = Tag.query.filter_by(user_id=current_user.id).all() #Consulta todas as tags do banco de dados
+
+    #Captura o ID que queremos editar
+    edit_id = request.args.get('edit_id', type=int)
+
+    return render_template('tags.html', tags=tags, edit_id=edit_id) #Renderiza a página de tags
 
 @app.route('/delete_tag/<int:id>')
 @login_required
@@ -279,6 +314,25 @@ def delete_tag(id):
     db.session.commit() #Salva as alterações no banco de dados
     flash('Tag deletada com sucesso!', 'success') #Mensagem de sucesso
     return redirect(url_for('all_tags')) #Redireciona de volta para a página de tags
+
+@app.route('/edit_tag/<int:id>', methods=['GET', 'POST'])
+@login_required
+def edit_tag(id):
+    tag = Tag.query.get_or_404(id) #Consulta a tag pelo id, se não existir retorna 404
+
+    if request.method == 'POST':
+        novo_nome = request.form['name'].strip().lower() #Obtém o novo nome da tag do formulário
+
+        if novo_nome:
+            tag.name = novo_nome
+            db.session.commit() #Salva as alterações no banco de dados
+            flash('Tag atualizada com sucesso!', 'success') #Mensagem de sucesso
+            return redirect(url_for('all_tags')) #Redireciona de volta para a página de tags
+        else:
+            flash('O nome da tag não pode ser vazio.', 'error') #Mensagem de erro
+
+            return redirect(url_for('all_tags'))
+    return render_template('edit_tag.html', tag=tag) #Renderiza a página de edição de tag
 
 @app.route('/memories')
 @login_required
@@ -300,6 +354,10 @@ def memories():
     ).all()
 
     return render_template('memories.html', posts=posts)
+
+@app.errorhandler(404) #Rota para erro 404
+def page_not_found(e):
+    return render_template('404.html'), 404
 
 if __name__ == '__main__':
     app.run(debug=True)

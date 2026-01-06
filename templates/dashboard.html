@@ -31,8 +31,15 @@
             
             <div class="new-post-card">
                 <h2>Novo Pensamento</h2>
-                <form action="/add_post" method="POST">
+                <form action="/add_post" method="POST" enctype="multipart/form-data">
                     <textarea name="content" rows="3" placeholder="O que está acontecendo agora?" required></textarea>
+
+                    <div style="margin-top: 10px;">
+                        <label for="file-upload" style="cursor: pointer; color: #39739d;">
+                            <i class="fas fa-camera"></i> Adicionar foto
+                        </label>
+                        <input id="file-upload" type="file" name="imagem" accept="image/*" style="margin-left: 10px;">
+                    </div>
                     <div style="margin-top: 10px;">
                         <input type="text" name="tags" placeholder="Tags (separe por vírgula: pessoal, trabalho...)" 
                             style="width: 100%; border: 1px solid #ddd; padding: 8px; border-radius: 4px;">
@@ -63,6 +70,24 @@
                         </a>
                     {% endif %}
                 </div>
+
+    <div style="margin-bottom: 20px; text-align: center;">
+        <form action="{{ url_for('dashboard') }}" method="GET" style="display: inline-flex; gap: 10px;">
+        
+            <input type="text" name="q" placeholder="Buscar memórias..." 
+               value="{{ request.args.get('q', '') }}"
+               style="padding: 8px; border-radius: 20px; border: 1px solid #ccc; width: 250px;">
+        
+            <button type="submit" style="background: #39739d; color: white; border: none; padding: 8px 15px; border-radius: 20px; cursor: pointer;">
+                <i class="fas fa-search"></i> Buscar
+            </button>
+
+            {% if request.args.get('q') %}
+                <a href="{{ url_for('dashboard') }}" style="color: #666; padding: 8px; text-decoration: none;">Limpar</a>
+            {% endif %}
+        </form>
+    </div>
+
             {% for post in posts %}
                 <div class="post-card">
                     <div class="post-header">
@@ -71,6 +96,12 @@
                     </div>
                     
                     <p class="post-content">{{ post.content }}</p>
+
+                    {% if post.imagem %}
+                        <div style="margin-top: 10px;">
+                            <img src="{{ url_for('static', filename='uploads/' + post.imagem) }}" alt="Imagem do post" style="max-width: 100%; border-radius: 8px;">
+                        </div>
+                    {% endif %}
 
                     {% if post.tags %}
                         <div style="margin-bottom: 15px;">
@@ -92,6 +123,33 @@
             {% else %}
                 <p class="empty-state">Seu diário está vazio. Comece a escrever!</p>
             {% endfor %}
+
+            <div style="margin-top: 20px; display: flex; justify-content: center; gap: 15px;">
+                
+                {% if posts.has_prev %}
+                    <a href="{{ url_for('dashboard', page=posts.prev_num) }}" 
+                       class="btn-small" 
+                       style="background-color: #6c5ce7; color: white; text-decoration: none; padding: 8px 15px; border-radius: 20px;">
+                       &laquo; Anterior
+                    </a>
+                {% endif %}
+
+                {% if posts.pages > 1 %}
+                    <span style="align-self: center; color: #666;">
+                        Página {{ posts.page }} de {{ posts.pages }}
+                    </span>
+                {% endif %}
+
+                {% if posts.has_next %}
+                    <a href="{{ url_for('dashboard', page=posts.next_num) }}" 
+                       class="btn-small" 
+                       style="background-color: #6c5ce7; color: white; text-decoration: none; padding: 8px 15px; border-radius: 20px;">
+                       Próxima &raquo;
+                    </a>
+                {% endif %}
+                
+        </div>
+
         </main>
 
     <aside class="right-widgets">
