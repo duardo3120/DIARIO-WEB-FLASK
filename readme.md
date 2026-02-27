@@ -56,4 +56,4 @@ Um aplicativo de diário pessoal completo, seguro e com design moderno, desenvol
     Acesse `http://127.0.0.1:5000` no seu navegador.
 
 ---
-Desenvolvido por [Seu Nome]
+Desenvolvido por Eduardo (Duardo)
