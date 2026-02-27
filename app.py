@@ -4,15 +4,26 @@ from sqlalchemy import extract
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
+from flask_mail import Mail, Message
 import os
 from datetime import datetime
 from dotenv import load_dotenv
+from itsdangerous import URLSafeTimedSerializer
 load_dotenv()
 import calendar #Módulo para calendários
 
 
 # Cria a aplicação web
 app = Flask(__name__)
+
+#Configurações do e-mail
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = os.getenv('EMAIL_USER') #E-mail do remetente (definido no .env)
+app.config['MAIL_PASSWORD'] = os.getenv('EMAIL_PASS') #Senha do e-mail do remetente (definida no .env)
+
+mail = Mail(app) #Inicializa o Flask-Mail com a aplicação Flask
 
 #Configura a chave secreta para sessões e flash messages
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY') #Chave secreta para sessões escolhidas por mim
@@ -48,6 +59,8 @@ class User(db.Model, UserMixin): #Cria a tabela de usuários no banco de dados, 
     id = db.Column(db.Integer, primary_key=True) #ID do usuário
     username = db.Column(db.String(80), unique=True, nullable=False) #Nome do usuário
     password_hash = db.Column(db.String(128), nullable=False) #Senha do usuário (armazenada como hash) -- sempre salvar a senha em hash
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    email_ativo = db.Column(db.Boolean, default=False)
 
     def __repr__(self):
         return f'<User {self.username}>'
@@ -104,7 +117,7 @@ def dashboard():
     ).all()
     dias_ativos = [p.dataPost.day for p in posts_do_mes]
 
-    # --- 2. LÓGICA DE FILTRAGEM (Aqui entra a novidade) ---
+    # --- 2. LÓGICA DE FILTRAGEM  ---
     
     # Tenta obter o termo de pesquisa 'q' e a data 'data'
     busca = request.args.get('q')
@@ -127,7 +140,7 @@ def dashboard():
             extract('month', Post.dataPost) == data_filtro.month,
             extract('year', Post.dataPost) == data_filtro.year,
             Post.user_id == current_user.id
-        ).all()
+        ).order_by(Post.dataPost.desc()).paginate(page=page, per_page=5)
         titulo_pagina = f'Posts de {data_filtro.strftime("%d/%m/%Y")}'
 
     else:
@@ -148,23 +161,27 @@ def dashboard():
                            ano_atual=hoje.year)
 
 #  - A rota lembra o usuário
-@app.route('/login', methods=['POST']) #Rota para o login com metodo post
+@app.route('/login', methods=['POST'])
 def login():
+    # Obtém dados do formulário (agora buscamos por 'email')
+    email = request.form['email'] 
+    senha = request.form['password']
 
-    #Obtém dados do formulário
-    usuario = request.form['username'] #Baseado no name do input
-    senha = request.form['password'] #Baseado no name do input
+    # Busca o usuário pelo e-mail em vez do nome de usuário
+    user = User.query.filter_by(email=email).first()
 
-    user = User.query.filter_by(username=usuario).first() #Consulta o banco de dados para achar o usuário
-
-    if user and check_password_hash(user.password_hash, senha): #Verifica se o usuário existe e se a senha está correta
-        login_user(user) #  O FLASK lembra dele 
-        # Login bem-sucedido
-        return redirect(url_for('dashboard')) #Redireciona para o dashboard
+    if user and check_password_hash(user.password_hash, senha):
+        # 1. VERIFICA SE A CONTA ESTÁ ATIVA
+        if not user.email_ativo:
+            flash('Sua conta ainda não foi ativada. Por favor, verifique seu e-mail.', 'warning')
+            return redirect(url_for('index'))
+        
+        # 2. SE ESTIVER ATIVA, FAZ O LOGIN
+        login_user(user)
+        return redirect(url_for('dashboard'))
     else:
-        # Login falhou
-        flash('Nome de usuário ou senha incorretos.', 'error') #Mensagem de erro
-        return redirect(url_for('index')) #Redireciona de volta para a página inicial
+        flash('E-mail ou senha incorretos.', 'error')
+        return redirect(url_for('index'))
 
 # - Rota para adicionar post    
 @app.route('/add_post', methods=['POST'])
@@ -260,35 +277,96 @@ def logout():
     flash('Você saiu com sucesso.', 'success') #Mensagem de sucesso
     return redirect(url_for('index')) #Redireciona para a página inicial
     
-@app.route('/register') #Rota para a página de registro (get)
+@app.route('/register')
 def mostra_register():
-    return render_template('register.html') # Renderiza o arquivo register.html
+    return render_template('register.html')
 
-@app.route('/register', methods=['POST']) #Rota para o registro com metodo post
+# --- ROTA DE REGISTRO ATUALIZADA (Salva E-mail e pede confirmação) ---
+@app.route('/register', methods=['POST'])
 def register():
-    #Obtém dados do formulário
-    usuario = request.form['username'] #Baseado no name do input
-    senha = request.form['password'] #Baseado no name do input
-    confirm_password = request.form['confirm_password'] #Baseado no name do input
+    usuario = request.form['username']
+    email = request.form['email'] # <--- NOVO: Pegando o e-mail do HTML
+    senha = request.form['password']
+    confirm_password = request.form['confirm_password']
 
+    # Verificações básicas
     if senha != confirm_password:
         flash('As senhas não coincidem.', 'error')
-        return redirect(url_for('mostra_register')) #Redireciona de volta para a página de registro
+        return redirect(url_for('mostra_register'))
     
-    user_exists = User.query.filter_by(username=usuario).first() #Verifica se o usuário já existe
-    if user_exists:
+    if User.query.filter_by(username=usuario).first():
         flash('Nome de usuário já existe. Escolha outro.', 'error')
-        return redirect(url_for('mostra_register')) #Redireciona de volta para a página de registro
+        return redirect(url_for('mostra_register'))
+
+    # VERIFICAÇÃO NOVA: Se o e-mail já existe
+    if User.query.filter_by(email=email).first():
+        flash('Este e-mail já está cadastrado.', 'error')
+        return redirect(url_for('mostra_register'))
     
-    password_hash = generate_password_hash(senha)    #Gera o hash da senha
+    # Criação do Usuário
+    password_hash = generate_password_hash(senha)
+    # email_ativo começa como False (definido no modelo)
+    new_user = User(username=usuario, email=email, password_hash=password_hash)
 
-    new_user = User(username=usuario, password_hash=password_hash) #Cria um  usuário
+    db.session.add(new_user)
+    db.session.commit()
 
-    db.session.add(new_user) #Adiciona o  usuário à sessão do banco de dados
-    db.session.commit() #Salva as alterações no banco de dados
+    # GERAR TOKEN DE CONFIRMAÇÃO
+    token = gerar_token_confirmacao(email)
 
-    flash('Conta criada com sucesso! Você já pode fazer login.', 'success')
+    link_confirmacao = url_for('confirmar_email', token=token, _external=True) #Gera o link de confirmação com o token
+
+    msg = Message('Confirme sua conta no Chronos',
+                  sender=app.config['MAIL_USERNAME'],
+                  recipients=[email])
+    
+    msg.body = f'''Olá {usuario}! Bem-vindo ao Chronos. Para ativar sua conta e começar a guardar suas memórias, clique no link abaixo: {link_confirmacao}
+    Se você não se cadastrou no Chronos, ignore este e-mail.'''
+
+    mail.send(msg) #Envia o e-mail de confirmação (ainda sem configuração real do Flask-Mail, isso é só um placeholder)
+
+    # MENSAGEM DE SUCESSO (Ainda sem o envio real do e-mail)
+    flash('Conta criada com sucesso! Verifique seu e-mail para ativar a conta antes de logar.', 'info')
+    
+    # Redireciona para o login (index), não entra direto!
     return redirect(url_for('index'))
+
+def gerar_token_confirmacao(email):
+    serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+    return serializer.dumps(email, salt='email-confirmacao-salt')
+
+# Função para gerar token de recuperação
+def gerar_token_recuperacao(email):
+    serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+    return serializer.dumps(email, salt='recuperacao-senha-salt')
+
+@app.route('/recuperar_senha', methods=['GET', 'POST'])
+def recuperar_senha():
+    if request.method == 'POST':
+        email = request.form['email']
+        user = User.query.filter_by(email=email).first()
+
+        if user:
+            token = gerar_token_recuperacao(email)
+            link_recuperacao = url_for('resetar_senha', token=token, _external=True)
+
+            msg = Message('Recuperação de senha do Chronos',
+                          sender=app.config['MAIL_USERNAME'],
+                          recipients=[email])
+            msg.body = f'''Olá {user.username}!
+            
+Você solicitou a redefinição da sua senha no Chronos.
+Clique no link abaixo para criar uma nova senha (este link expira em 15 minutos):
+
+{link_recuperacao}
+
+Se você não solicitou essa mudança, por favor, ignore este e-mail. Nenhuma alteração será feita na sua conta.
+'''
+            mail.send(msg)
+
+            flash('Um link de recuperação foi enviado para seu e-mail.')
+            return redirect(url_for('index'))
+    return render_template('recuperar_senha.html')
 
 @app.route('/tag/<tag_name>') #Rota para ver posts por tag
 @login_required
@@ -358,6 +436,80 @@ def memories():
 @app.errorhandler(404) #Rota para erro 404
 def page_not_found(e):
     return render_template('404.html'), 404
+
+def confirmar_token_email(token, expiracao=3600):
+    serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+    try:
+        email = serializer.loads(token, salt='email-confirmacao-salt', max_age=expiracao)
+        return email
+    except:
+        return False
+    
+@app.route('/confirmar/<token>')
+def confirmar_email(token):
+    #descobrir de quem é o token
+    email = confirmar_token_email(token)
+
+    #Se o token for invalido ou expirado
+    if not email:
+        flash('O link de confirmação é inválido ou expirou.', 'error')
+        return redirect(url_for('index'))
+    
+    # Se o token for valido, acha o usuario no banco de dados
+    user = User.query.filter_by(email=email).first_or_404()
+
+    #Verifica se ele ja estava ativo
+    if user.email_ativo:
+        flash('Sua conta já está ativa. Faça login.', 'info')
+    else:
+        user.email_ativo = True
+        db.session.commit()
+        flash('Conta ativada com sucesso! Agora você pode fazer login.', 'success')
+    return redirect(url_for('index'))
+
+# 1. Função que "desfaz" o token de recuperação e verifica o tempo
+def confirmar_token_recuperacao(token, expiracao=900): # 900 segundos = 15 minutos
+    serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+    try:
+        # Tenta descobrir o e-mail, usando o MESMO salt que usamos para gerar
+        email = serializer.loads(token, salt='recuperacao-senha-salt', max_age=expiracao)
+        return email
+    except:
+        return False # Retorna Falso se expirou ou foi alterado
+
+# 2. A rota que recebe o clique do usuário no e-mail
+@app.route('/resetar_senha/<token>', methods=['GET', 'POST'])
+def resetar_senha(token):
+    # Verifica se o token é válido e descobre de qual e-mail ele é
+    email = confirmar_token_recuperacao(token)
+    
+    # Se o token for falso (passou de 15 min ou foi mexido)
+    if not email:
+        flash('O link de redefinição é inválido ou expirou. Solicite um novo link.', 'error')
+        return redirect(url_for('recuperar_senha'))
+        
+    # Acha o usuário no banco de dados
+    user = User.query.filter_by(email=email).first_or_404()
+    
+    # Se o usuário preencheu o formulário com a nova senha (POST)
+    if request.method == 'POST':
+        senha = request.form['password']
+        confirm_password = request.form['confirm_password']
+        
+        if senha != confirm_password:
+            flash('As senhas não coincidem. Tente novamente.', 'error')
+            # Redireciona de volta para a mesma página, mantendo o token na URL
+            return redirect(url_for('resetar_senha', token=token))
+            
+        # O momento mais importante: Troca a senha antiga pela nova (em hash!)
+        user.password_hash = generate_password_hash(senha)
+        db.session.commit()
+        
+        flash('Sua senha foi redefinida com sucesso! Você já pode entrar.', 'success')
+        return redirect(url_for('index'))
+        
+    # Se ele apenas clicou no link e está acessando a página (GET)
+    return render_template('resetar_senha.html', token=token)
 
 if __name__ == '__main__':
     app.run(debug=True)

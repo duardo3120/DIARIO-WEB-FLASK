@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,8 +9,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="icon" href="{{ url_for('static', filename='favicon.png') }}" type="image/png">
 </head>
+
 <body>
-    
+
     <header class="top-bar">
         <div class="logo">📒 Chronos</div>
         <div class="user-menu">
@@ -29,20 +31,20 @@
         </aside>
 
         <main class="content-area">
-            
+
             <div class="new-post-card">
                 <h2>Novo Pensamento</h2>
                 <form action="/add_post" method="POST" enctype="multipart/form-data">
                     <textarea name="content" rows="3" placeholder="O que está acontecendo agora?" required></textarea>
 
-                    <div style="margin-top: 10px;">
-                        <label for="file-upload" style="cursor: pointer; color: #39739d;">
-                            <i class="fas fa-camera"></i> Adicionar foto
+                    <div class="file-upload-wrapper">
+                        <input type="file" id="imagem" name="imagem" class="file-upload-input">
+                        <label for="imagem" class="file-upload-label">
+                            <i class="fas fa-camera"></i> <span id="file-name">Adicionar foto</span>
                         </label>
-                        <input id="file-upload" type="file" name="imagem" accept="image/*" style="margin-left: 10px;">
                     </div>
                     <div style="margin-top: 10px;">
-                        <input type="text" name="tags" placeholder="Tags (separe por vírgula: pessoal, trabalho...)" 
+                        <input type="text" name="tags" placeholder="Tags (separe por vírgula: pessoal, trabalho...)"
                             style="width: 100%; border: 1px solid #ddd; padding: 8px; border-radius: 4px;">
                     </div>
                     <div class="form-footer">
@@ -52,152 +54,154 @@
             </div>
 
             {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ category }}">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                {% endif %}
+            {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">
+                {{ message }}
+            </div>
+            {% endfor %}
+            {% endif %}
             {% endwith %}
 
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
-                    <h2>{{ title if title else 'Timeline' }}</h2>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+                <h2>{{ title if title else 'Timeline' }}</h2>
 
-                    {% if title %}
+                {% if title %}
 
-                        <a href="{{ url_for('dashboard') }}" style="font-size: 0.9rem; color: #666; text-decoration: none;">
-                         <i class="fas fa-times-circle"></i> Limpar filtro
-                        </a>
+                <a href="{{ url_for('dashboard') }}" style="font-size: 0.9rem; color: #666; text-decoration: none;">
+                    <i class="fas fa-times-circle"></i> Limpar filtro
+                </a>
+                {% endif %}
+            </div>
+
+            <div style="margin-bottom: 20px; text-align: center;">
+                <form action="{{ url_for('dashboard') }}" method="GET" style="display: inline-flex; gap: 10px;">
+
+                    <input type="text" name="q" placeholder="Buscar memórias..." value="{{ request.args.get('q', '') }}"
+                        style="padding: 8px; border-radius: 20px; border: 1px solid #ccc; width: 250px;">
+
+                    <button type="submit"
+                        style="background: #39739d; color: white; border: none; padding: 8px 15px; border-radius: 20px; cursor: pointer;">
+                        <i class="fas fa-search"></i> Buscar
+                    </button>
+
+                    {% if request.args.get('q') %}
+                    <a href="{{ url_for('dashboard') }}"
+                        style="color: #666; padding: 8px; text-decoration: none;">Limpar</a>
                     {% endif %}
-                </div>
-
-    <div style="margin-bottom: 20px; text-align: center;">
-        <form action="{{ url_for('dashboard') }}" method="GET" style="display: inline-flex; gap: 10px;">
-        
-            <input type="text" name="q" placeholder="Buscar memórias..." 
-               value="{{ request.args.get('q', '') }}"
-               style="padding: 8px; border-radius: 20px; border: 1px solid #ccc; width: 250px;">
-        
-            <button type="submit" style="background: #39739d; color: white; border: none; padding: 8px 15px; border-radius: 20px; cursor: pointer;">
-                <i class="fas fa-search"></i> Buscar
-            </button>
-
-            {% if request.args.get('q') %}
-                <a href="{{ url_for('dashboard') }}" style="color: #666; padding: 8px; text-decoration: none;">Limpar</a>
-            {% endif %}
-        </form>
-    </div>
+                </form>
+            </div>
 
             {% for post in posts %}
-                <div class="post-card">
-                    <div class="post-header">
-                        <span class="author-name">{{ post.autor.username }}</span>
-                        <span class="post-date">{{ post.dataPost.strftime('%d/%m às %H:%M') }}</span>
-                    </div>
-                    
-                    <p class="post-content">{{ post.content }}</p>
-
-                    {% if post.imagem %}
-                        <div style="margin-top: 10px;">
-                            <img src="{{ url_for('static', filename='uploads/' + post.imagem) }}" alt="Imagem do post" style="max-width: 100%; border-radius: 8px;">
-                        </div>
-                    {% endif %}
-
-                    {% if post.tags %}
-                        <div style="margin-bottom: 15px;">
-                    {% for tag in post.tags %}
-                       <a href="{{ url_for('posts_by_tag', tag_name=tag.name) }}" class="tag-pill">
-                            #{{ tag.name }}
-                        </a>
-                    {% endfor %}
-                        </div>
-                    {% endif %}
-                    
-                    <div class="post-actions">
-                        <a href="{{ url_for('edit_post', post_id=post.idPost) }}" class="btn-small">Editar</a>
-                        <form action="{{ url_for('delete_post', post_id=post.idPost) }}" method="POST" style="display: inline;">
-                            <button type="submit" class="btn-small btn-danger">Apagar</button>
-                        </form>
-                    </div>
+            <div class="post-card">
+                <div class="post-header">
+                    <span class="author-name">{{ post.autor.username }}</span>
+                    <span class="post-date">{{ post.dataPost.strftime('%d/%m às %H:%M') }}</span>
                 </div>
+
+                <p class="post-content">{{ post.content }}</p>
+
+                {% if post.imagem %}
+                <div style="margin-top: 10px;">
+                    <img src="{{ url_for('static', filename='uploads/' + post.imagem) }}" alt="Imagem do post"
+                        style="max-width: 100%; border-radius: 8px;">
+                </div>
+                {% endif %}
+
+                {% if post.tags %}
+                <div style="margin-bottom: 15px;">
+                    {% for tag in post.tags %}
+                    <a href="{{ url_for('posts_by_tag', tag_name=tag.name) }}" class="tag-pill">
+                        #{{ tag.name }}
+                    </a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <div class="post-actions">
+                    <a href="{{ url_for('edit_post', post_id=post.idPost) }}" class="btn-small">Editar</a>
+                    <form action="{{ url_for('delete_post', post_id=post.idPost) }}" method="POST"
+                        style="display: inline;">
+                        <button type="submit" class="btn-small btn-danger">Apagar</button>
+                    </form>
+                </div>
+            </div>
             {% else %}
-                <p class="empty-state">Seu diário está vazio. Comece a escrever!</p>
+            <p class="empty-state">Seu diário está vazio. Comece a escrever!</p>
             {% endfor %}
 
             <div style="margin-top: 20px; display: flex; justify-content: center; gap: 15px;">
-                
+
                 {% if posts.has_prev %}
-                    <a href="{{ url_for('dashboard', page=posts.prev_num) }}" 
-                       class="btn-small" 
-                       style="background-color: #6c5ce7; color: white; text-decoration: none; padding: 8px 15px; border-radius: 20px;">
-                       &laquo; Anterior
-                    </a>
+                <a href="{{ url_for('dashboard', page=posts.prev_num) }}" class="btn-small"
+                    style="background-color: #6c5ce7; color: white; text-decoration: none; padding: 8px 15px; border-radius: 20px;">
+                    &laquo; Anterior
+                </a>
                 {% endif %}
 
                 {% if posts.pages > 1 %}
-                    <span style="align-self: center; color: #666;">
-                        Página {{ posts.page }} de {{ posts.pages }}
-                    </span>
+                <span style="align-self: center; color: #666;">
+                    Página {{ posts.page }} de {{ posts.pages }}
+                </span>
                 {% endif %}
 
                 {% if posts.has_next %}
-                    <a href="{{ url_for('dashboard', page=posts.next_num) }}" 
-                       class="btn-small" 
-                       style="background-color: #6c5ce7; color: white; text-decoration: none; padding: 8px 15px; border-radius: 20px;">
-                       Próxima &raquo;
-                    </a>
+                <a href="{{ url_for('dashboard', page=posts.next_num) }}" class="btn-small"
+                    style="background-color: #6c5ce7; color: white; text-decoration: none; padding: 8px 15px; border-radius: 20px;">
+                    Próxima &raquo;
+                </a>
                 {% endif %}
-                
-        </div>
+
+            </div>
 
         </main>
 
-    <aside class="right-widgets">
-    
+        <aside class="right-widgets">
+
             <div class="widget">
                 <h3 style="text-align: center; margin-bottom: 15px;">
                     {{ mes_atual }} / {{ ano_atual }}
                 </h3>
 
-            <div class="calendar-grid">
-                <div class="cal-header">D</div>
-                <div class="cal-header">S</div>
-                <div class="cal-header">T</div>
-                <div class="cal-header">Q</div>
-                <div class="cal-header">Q</div>
-                <div class="cal-header">S</div>
-                <div class="cal-header">S</div>
-                {% for semana in calendario %}
+                <div class="calendar-grid">
+                    <div class="cal-header">D</div>
+                    <div class="cal-header">S</div>
+                    <div class="cal-header">T</div>
+                    <div class="cal-header">Q</div>
+                    <div class="cal-header">Q</div>
+                    <div class="cal-header">S</div>
+                    <div class="cal-header">S</div>
+                    {% for semana in calendario %}
                     {% for dia in semana %}
-                        {% if dia == 0 %}
-                            <div class="cal-day empty"></div>
+                    {% if dia == 0 %}
+                    <div class="cal-day empty"></div>
+                    {% else %}
+                    <div class="cal-day {{ 'has-post' if dia in dias_ativos else '' }}">
+                        {% if dia in dias_ativos %}
+                        <a href="{{ url_for('dashboard', data='%04d-%02d-%02d' % (data_atual.year, data_atual.month, dia)) }}"
+                            style="text-decoration: none; color: inherit; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;">
+                            {{ dia }}
+                        </a>
                         {% else %}
-                            <div class="cal-day {{ 'has-post' if dia in dias_ativos else '' }}">
-                                {% if dia in dias_ativos %}
-                                    <a href="{{ url_for('dashboard', data='%04d-%02d-%02d' % (data_atual.year, data_atual.month, dia)) }}" 
-                                        style="text-decoration: none; color: inherit; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;">
-                                            {{ dia }}
-                                    </a>
-                                {% else %}
-                                    {{ dia }}
-                                {% endif %}
-                            </div>
+                        {{ dia }}
                         {% endif %}
+                    </div>
+                    {% endif %}
                     {% endfor %}
-                {% endfor %}
+                    {% endfor %}
+                </div>
             </div>
-        </div>
 
-        <div class="card" style="background: white; padding: 20px; border-radius: 12px; margin-top: 20px;">
-            <h3 style="margin-bottom: 15px;">Neste dia</h3>
+            <div class="card" style="background: white; padding: 20px; border-radius: 12px; margin-top: 20px;">
+                <h3 style="margin-bottom: 15px;">Neste dia</h3>
 
-            {% if memorias %}
-                 <p style="margin-bottom: 10px;">
+                {% if memorias %}
+                <p style="margin-bottom: 10px;">
                     Você tem <strong>{{ memorias|length }}</strong> lembrança(s) de anos anteriores.
                 </p>
 
-                <div style="background: #f0f2f5; padding: 10px; border-radius: 8px; margin-bottom: 10px; font-style: italic; color: #555; font-size: 0.9rem;">
+                <div
+                    style="background: #f0f2f5; padding: 10px; border-radius: 8px; margin-bottom: 10px; font-style: italic; color: #555; font-size: 0.9rem;">
                     "{{ memorias[0].content }}"
                     <br>
                     <span style="font-weight: bold; font-style: normal; font-size: 0.8rem; color: #6c5ce7;">
@@ -205,18 +209,43 @@
                     </span>
                 </div>
 
-            <a href="{{ url_for('memories') }}" style="text-decoration: none; color: #6c5ce7; font-weight: bold; font-size: 0.9rem;">
-                Ver todas as memórias <i class="fas fa-arrow-right"></i>
-            </a>
+                <a href="{{ url_for('memories') }}"
+                    style="text-decoration: none; color: #6c5ce7; font-weight: bold; font-size: 0.9rem;">
+                    Ver todas as memórias <i class="fas fa-arrow-right"></i>
+                </a>
 
-            {% else %}
+                {% else %}
                 <p style="color: #888;">Nenhuma lembrança antiga encontrada para hoje.</p>
-            {% endif %}
+                {% endif %}
 
-        </div>
+            </div>
 
-    </aside>
+        </aside>
 
     </div>
+
+    <script>
+        // Pega os elementos do HTML
+        const fileInput = document.getElementById('imagem');
+        const fileNameSpan = document.getElementById('file-name');
+        const originalText = fileNameSpan.textContent;
+
+        // Quando o usuário escolhe um arquivo...
+        fileInput.addEventListener('change', function (e) {
+            if (this.files && this.files.length > 0) {
+                // Se tiver arquivo, mostra o nome dele
+                fileNameSpan.textContent = this.files[0].name;
+                // Opcional: mudar estilo para mostrar que está selecionado
+                fileNameSpan.parentElement.style.backgroundColor = '#f0f0ff';
+                fileNameSpan.parentElement.style.borderColor = '#6c63ff';
+            } else {
+                // Se ele cancelar, volta o texto original
+                fileNameSpan.textContent = originalText;
+                // Remove estilo opcional
+                fileNameSpan.parentElement.style.backgroundColor = '';
+            }
+        });
+    </script>
 </body>
+
 </html>
