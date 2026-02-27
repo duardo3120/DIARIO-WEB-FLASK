@@ -1,16 +1,15 @@
-# Ambiente virtual do Python
+
+.env
+
 venv/
 .venv/
 
-# Arquivos de cache do Python
+
 __pycache__/
 
-# O arquivo do seu banco de dados
+
 diario.db
 *.sqlite3
 
-# Arquivos de configuração de ambiente (veja o Passo 2)
-.env
 
-# Pasta de uploads
 static/uploads/
