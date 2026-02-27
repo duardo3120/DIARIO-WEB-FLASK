@@ -11,3 +11,6 @@ diario.db
 
 # Arquivos de configuração de ambiente (veja o Passo 2)
 .env
+
+# Pasta de uploads
+static/uploads/

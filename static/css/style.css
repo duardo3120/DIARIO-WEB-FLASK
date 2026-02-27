@@ -2,12 +2,15 @@
 
 /* --- 1. CONFIGURAÇÕES GERAIS --- */
 * {
-    box-sizing: border-box; /* Garante que tamanhos obedeçam as bordas */
+    box-sizing: border-box;
+    /* Garante que tamanhos obedeçam as bordas */
 }
 
 body {
-    font-family: 'Inter', 'Segoe UI', sans-serif; /* Fonte moderna */
-    background-color: #f0f2f5; /* Aquele cinza "Facebook/Twitter" */
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    /* Fonte moderna */
+    background-color: #f0f2f5;
+    /* Aquele cinza "Facebook/Twitter" */
     color: #1c1e21;
     margin: 0;
     padding: 0;
@@ -17,11 +20,12 @@ body {
 .top-bar {
     background-color: #ffffff;
     height: 60px;
-    display: flex; /* Alinha logo e menu lado a lado */
+    display: flex;
+    /* Alinha logo e menu lado a lado */
     justify-content: space-between;
     align-items: center;
     padding: 0 20px;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
     position: sticky;
     top: 0;
     z-index: 100;
@@ -30,7 +34,8 @@ body {
 .logo {
     font-weight: bold;
     font-size: 1.2rem;
-    color: #6c5ce7; /* Roxo estilo Chronicle */
+    color: #6c5ce7;
+    /* Roxo estilo Chronicle */
 }
 
 .btn-logout {
@@ -45,11 +50,13 @@ body {
     display: grid;
     /* Esquerda (250px) | Meio (Flexível) | Direita (300px) */
     grid-template-columns: 250px 1fr 300px;
-    gap: 20px; /* Espaço entre as colunas */
+    gap: 20px;
+    /* Espaço entre as colunas */
     max-width: 1200px;
     margin: 20px auto;
     padding: 0 20px;
-    align-items: start; /* Impede que colunas estiquem até o rodapé */
+    align-items: start;
+    /* Impede que colunas estiquem até o rodapé */
 }
 
 /* --- 4. BARRA LATERAL (Esquerda) --- */
@@ -64,9 +71,11 @@ body {
     transition: background 0.2s;
 }
 
-.sidebar nav a:hover, .sidebar nav a.active {
+.sidebar nav a:hover,
+.sidebar nav a.active {
     background-color: #e4e6eb;
-    color: #1877f2; /* Azul destaque */
+    color: #1877f2;
+    /* Azul destaque */
 }
 
 .sidebar i {
@@ -78,10 +87,12 @@ body {
 /* --- 5. CONTEÚDO PRINCIPAL (Meio) --- */
 
 /* Cartões (Usado tanto para criar post quanto para exibir) */
-.new-post-card, .post-card, .widget {
+.new-post-card,
+.post-card,
+.widget {
     background: white;
     border-radius: 8px;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
     padding: 15px;
     margin-bottom: 20px;
 }
@@ -104,11 +115,13 @@ body {
 }
 
 button {
-    background-color: #6c5ce7; /* Botão Roxo */
+    background-color: #6c5ce7;
+    /* Botão Roxo */
     color: white;
     border: none;
     padding: 8px 20px;
-    border-radius: 20px; /* Botão redondo "pílula" */
+    border-radius: 20px;
+    /* Botão redondo "pílula" */
     font-weight: bold;
     cursor: pointer;
     transition: background 0.2s;
@@ -177,8 +190,16 @@ button:hover {
     margin-bottom: 15px;
     font-weight: 500;
 }
-.alert-success { background: #d1e7dd; color: #0f5132; }
-.alert-error { background: #f8d7da; color: #842029; }
+
+.alert-success {
+    background: #d1e7dd;
+    color: #0f5132;
+}
+
+.alert-error {
+    background: #f8d7da;
+    color: #842029;
+}
 
 
 /* Estilo para Inputs (Login, Senha) igual ao Textarea */
@@ -188,7 +209,8 @@ input[type="password"] {
     padding: 12px;
     margin-bottom: 15px;
     border: 1px solid #ddd;
-    border-radius: 8px; /* Bordas arredondadas modernas */
+    border-radius: 8px;
+    /* Bordas arredondadas modernas */
     background-color: #f9f9f9;
     font-size: 1rem;
     box-sizing: border-box;
@@ -197,7 +219,8 @@ input[type="password"] {
 }
 
 input:focus {
-    border-color: #6c5ce7; /* Roxo quando clica */
+    border-color: #6c5ce7;
+    /* Roxo quando clica */
     background-color: white;
 }
 
@@ -206,7 +229,8 @@ input:focus {
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 80vh; /* Ocupa quase toda a altura da tela */
+    min-height: 80vh;
+    /* Ocupa quase toda a altura da tela */
     flex-direction: column;
 }
 
@@ -230,7 +254,8 @@ input:focus {
 
 .calendar-grid {
     display: grid;
-    grid-template-columns: repeat(7, 1fr); /* 7 colunas iguais */
+    grid-template-columns: repeat(7, 1fr);
+    /* 7 colunas iguais */
     gap: 5px;
     text-align: center;
 }
@@ -245,13 +270,15 @@ input:focus {
 .cal-day {
     font-size: 0.9rem;
     padding: 8px 0;
-    border-radius: 50%; /* Bolinha */
+    border-radius: 50%;
+    /* Bolinha */
     width: 30px;
     height: 30px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto; /* Centraliza na célula */
+    margin: 0 auto;
+    /* Centraliza na célula */
     color: #333;
 }
 
@@ -261,7 +288,8 @@ input:focus {
 
 /* Dia com Post (Destaque) */
 .cal-day.has-post {
-    background-color: #6c5ce7; /* Roxo do tema */
+    background-color: #6c5ce7;
+    /* Roxo do tema */
     color: white;
     font-weight: bold;
     cursor: pointer;
@@ -282,12 +310,112 @@ input:focus {
     border-radius: 12px;
     font-size: 0.85rem;
     margin-right: 5px;
-    text-decoration: none; /* Remove o sublinhado de link */
+    text-decoration: none;
+    /* Remove o sublinhado de link */
     transition: all 0.2s;
 }
 
 .tag-pill:hover {
     background-color: #d0e3f0;
     color: #205075;
-    transform: translateY(-1px); /* Leve subida ao passar o mouse */
+    transform: translateY(-1px);
+    /* Leve subida ao passar o mouse */
+}
+
+.alert {
+    padding: 12px 15px;
+    margin-bottom: 20px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    text-align: center;
+    border: 1px solid transparent;
+}
+
+.alert-success {
+    color: #155724;
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+}
+
+.alert-error,
+.alert-danger {
+    color: #721c24;
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+}
+
+.alert-info {
+    color: #0c5460;
+    background-color: #d1ecf1;
+    border-color: #bee5eb;
+}
+
+/* =========================================
+   ESTILO DOS CAMPOS DE FORMULÁRIO (INPUTS)
+   ========================================= */
+input[type="text"],
+input[type="password"],
+input[type="email"] {
+    width: 100%;
+    padding: 12px 15px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-sizing: border-box;
+    font-size: 1rem;
+    font-family: inherit;
+    transition: border-color 0.3s ease;
+}
+
+/* Efeito quando o usuário clica no campo */
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="email"]:focus {
+    border-color: #6c63ff;
+    /* Ajuste para a cor exata do seu botão se precisar */
+    outline: none;
+    box-shadow: 0 0 5px rgba(108, 99, 255, 0.2);
+}
+
+/* =========================================
+   ESTILO DO BOTÃO DE UPLOAD
+   ========================================= */
+.file-upload-wrapper {
+    margin-bottom: 15px;
+}
+
+/* Esconde o input original feio */
+.file-upload-input {
+    display: none;
+}
+
+/* Transforma a label num botão estiloso */
+.file-upload-label {
+    display: inline-flex;
+    align-items: center;
+    padding: 10px 15px;
+    background-color: transparent;
+    /* Fundo transparente */
+    color: #6c63ff;
+    /* Cor roxa do seu tema */
+    border: 2px solid #6c63ff;
+    /* Borda roxa */
+    border-radius: 6px;
+    /* Bordas arredondadas */
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+/* Espaço entre o ícone e o texto */
+.file-upload-label i {
+    margin-right: 8px;
+    font-size: 1.1rem;
+}
+
+/* Efeito hover (quando passa o mouse) */
+.file-upload-label:hover {
+    background-color: #6c63ff;
+    color: #fff;
 }

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Página Não Encontrada</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+            background-color: #f4f6f8;
+            color: #333;
+        }
+        h1 {
+            font-size: 80px;
+            margin: 0;
+            color: #39739d; /* Mesma cor do botão de busca */
+        }
+        p {
+            font-size: 20px;
+            color: #666;
+        }
+        .btn-home {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #39739d;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .btn-home:hover {
+            background-color: #2c5a7a;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>404</h1>
+    <p>Ops! Parece que essa memória se perdeu no tempo.</p>
+    <p>A página que você está procurando não existe.</p>
+    
+    <a href="{{ url_for('dashboard') }}" class="btn-home">
+        <i class="fas fa-home"></i> Voltar para o Início
+    </a>
+
+</body>
+</html>

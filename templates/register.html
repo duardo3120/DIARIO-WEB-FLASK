@@ -3,42 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Criar Conta - Chronicle Clone</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <title>Criar Conta - Chronos</title>
+    <link rel="icon" href="{{ url_for('static', filename='favicon.png') }}" type="image/png">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    
+    <style>
+        /* Um estilo básico caso não tenhas o CSS linkado ainda */
+        body { font-family: sans-serif; background-color: #f4f4f9; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: white; padding: 2rem; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+        .form-group { margin-bottom: 1rem; }
+        label { display: block; margin-bottom: .5rem; color: #333; }
+        input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background-color: #6c63ff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 1rem; }
+        button:hover { background-color: #5a52d5; }
+        .alert { padding: 10px; margin-bottom: 15px; border-radius: 5px; color: white; text-align: center; }
+        .alert.error { background-color: #e74c3c; }
+        .link-login { text-align: center; margin-top: 15px; display: block; color: #6c63ff; text-decoration: none; }
+    </style>
 </head>
 <body>
 
-    <div class="auth-wrapper">
-        <h1 class="logo" style="font-size: 2rem; margin-bottom: 20px;">📒 Chronicle Clone</h1>
+    <div class="card">
+        <h2 style="text-align: center; color: #6c63ff;">Crie sua conta</h2>
 
-        <div class="new-post-card" style="width: 100%; max-width: 400px; padding: 40px;">
-            <h2 class="auth-title">Crie sua conta</h2>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
 
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ category }}">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
+        <form action="{{ url_for('register') }}" method="POST">
+            
+            <div class="form-group">
+                <label for="username">Nome de Usuário</label>
+                <input type="text" name="username" id="username" required placeholder="Como quer ser chamado?">
+            </div>
 
-            <form action="/register" method="POST">
-                <label for="username" style="display:block; margin-bottom:5px; color:#666;">Escolha um Usuário</label>
-                <input type="text" id="username" name="username" required>
-                
-                <label for="password" style="display:block; margin-bottom:5px; color:#666;">Senha</label>
-                <input type="password" id="password" name="password" required>
-                
-                <label for="confirm_password" style="display:block; margin-bottom:5px; color:#666;">Confirme a Senha</label>
-                <input type="password" id="confirm_password" name="confirm_password" required>
-                
-                <button type="submit" style="width: 100%; margin-top: 10px;">Registrar</button>
-            </form>
+            <div class="form-group">
+                <label for="email">Seu E-mail</label>
+                <input type="email" name="email" id="email" required placeholder="exemplo@email.com">
+            </div>
 
-            <a href="{{ url_for('index') }}" class="auth-link">Já tem conta? Fazer Login</a>
-        </div>
+            <div class="form-group">
+                <label for="password">Senha</label>
+                <input type="password" name="password" id="password" required placeholder="********">
+            </div>
+
+            <div class="form-group">
+                <label for="confirm_password">Confirmar Senha</label>
+                <input type="password" name="confirm_password" id="confirm_password" required placeholder="********">
+            </div>
+
+            <button type="submit">Criar Conta</button>
+        </form>
+
+        <a href="{{ url_for('index') }}" class="link-login">Já tem conta? Faça Login</a>
     </div>
 
 </body>

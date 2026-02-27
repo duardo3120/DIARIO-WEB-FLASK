@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - 📒 Chronos</title>
+    <title>Recuperar Senha - 📒 Chronos</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="icon" href="{{ url_for('static', filename='favicon.png') }}" type="image/png">
 </head>
@@ -15,7 +15,11 @@
         <h1 class="logo" style="font-size: 2rem; margin-bottom: 20px;">📒 Chronos</h1>
 
         <div class="new-post-card" style="width: 100%; max-width: 400px; padding: 40px;">
-            <h2 class="auth-title">Bem-vindo de volta</h2>
+            <h2 class="auth-title">Recuperar Senha</h2>
+
+            <p style="color: #666; margin-bottom: 20px; font-size: 0.95rem;">
+                Digite seu e-mail abaixo e enviaremos um link seguro para você redefinir sua senha.
+            </p>
 
             {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -27,22 +31,15 @@
             {% endif %}
             {% endwith %}
 
-            <form action="/login" method="POST">
-                <label for="email" style="display:block; margin-bottom:5px; color:#666;">E-mail</label>
+            <form action="{{ url_for('recuperar_senha') }}" method="POST">
+                <label for="email" style="display:block; margin-bottom:5px; color:#666;">E-mail cadastrado</label>
                 <input type="email" id="email" name="email" placeholder="seu@email.com" required>
 
-                <label for="password"
-                    style="display:block; margin-bottom:5px; color:#666; margin-top: 15px;">Senha</label>
-                <input type="password" id="password" name="password" placeholder="Sua senha" required>
-
-                <a href="{{ url_for('recuperar_senha') }}"
-                    style="display: block; text-align: right; font-size: 0.85rem; color: #6c63ff; margin-bottom: 15px; text-decoration: none;">Esqueceu
-                    a senha?</a>
-
-                <button type="submit" style="width: 100%; margin-top: 20px;">Entrar</button>
+                <button type="submit" style="width: 100%; margin-top: 20px;">Enviar Link de Recuperação</button>
             </form>
 
-            <a href="{{ url_for('register') }}" class="auth-link">Não tem uma conta? Crie agora</a>
+            <a href="{{ url_for('index') }}" class="auth-link"
+                style="display: block; margin-top: 15px; text-align: center;">Lembrou a senha? Voltar ao Login</a>
         </div>
     </div>
 
