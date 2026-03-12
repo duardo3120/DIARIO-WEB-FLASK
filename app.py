@@ -4,7 +4,7 @@ from sqlalchemy import extract
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
-from flask_mail import Mail, Message
+import requests
 import os
 from datetime import datetime
 from dotenv import load_dotenv
@@ -16,18 +16,27 @@ import calendar #Módulo para calendários
 # Cria a aplicação web
 app = Flask(__name__)
 
-#Configurações do e-mail
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 465
-app.config['MAIL_USE_TLS'] = False
-app.config['MAIL_USE_SSL'] = True
-app.config['MAIL_USERNAME'] = os.getenv('EMAIL_USER') #E-mail do remetente (definido no .env)
-app.config['MAIL_PASSWORD'] = os.getenv('EMAIL_PASS') #Senha do e-mail do remetente (definida no .env)
-
-mail = Mail(app) #Inicializa o Flask-Mail com a aplicação Flask
-
 #Configura a chave secreta para sessões e flash messages
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY') #Chave secreta para sessões escolhidas por mim
+
+def enviar_email_brevo(para_email, assunto, conteudo_html):
+    url = "https://api.brevo.com/v3/smtp/email"
+
+    headers = {
+        "accept": "application/json",
+        "api-key": os.getenv('BREVO_API_KEY'),
+        "content-type": "application/json"
+    }
+
+    payload = {
+        "sender": {"name": "Chronos", "email": os.getenv('EMAIL_USER')},
+        "to": [{"email": para_email}],
+        "subject": assunto,
+        "htmlContent": conteudo_html
+    }
+
+    resposta = requests.post(url, json=payload, headers=headers)
+    return resposta.status_code
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///diario.db' #Configuração do banco de dados SQLite
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False #Desativa o rastreamento de modificações para economizar recursos
@@ -317,14 +326,11 @@ def register():
 
     link_confirmacao = url_for('confirmar_email', token=token, _external=True) #Gera o link de confirmação com o token
 
-    msg = Message('Confirme sua conta no Chronos',
-                  sender=app.config['MAIL_USERNAME'],
-                  recipients=[email])
-    
-    msg.body = f'''Olá {usuario}! Bem-vindo ao Chronos. Para ativar sua conta e começar a guardar suas memórias, clique no link abaixo: {link_confirmacao}
-    Se você não se cadastrou no Chronos, ignore este e-mail.'''
+    assunto = 'Confirmação de conta no Chronos'
 
-    mail.send(msg) #Envia o e-mail de confirmação (ainda sem configuração real do Flask-Mail, isso é só um placeholder)
+    corp_email = f'''Olá {usuario}! Bem-vindo ao Chronos. Para ativar sua conta, por favor clique no link abaixo.'''
+
+    enviar_email_brevo(email, assunto, corp_email)
 
     # MENSAGEM DE SUCESSO (Ainda sem o envio real do e-mail)
     flash('Conta criada com sucesso! Verifique seu e-mail para ativar a conta antes de logar.', 'info')
@@ -351,19 +357,18 @@ def recuperar_senha():
             token = gerar_token_recuperacao(email)
             link_recuperacao = url_for('resetar_senha', token=token, _external=True)
 
-            msg = Message('Recuperação de senha do Chronos',
-                          sender=app.config['MAIL_USERNAME'],
-                          recipients=[email])
-            msg.body = f'''Olá {user.username}!
+            assunto = 'Recuperação de senha do Chronos'
+
+            corpo_email = f'''Olá {user.username}!
             
-Você solicitou a redefinição da sua senha no Chronos.
-Clique no link abaixo para criar uma nova senha (este link expira em 15 minutos):
+            Você solicitou a redefinição da sua senha no Chronos.<br>
+            Clique no link abaixo para criar uma nova senha (este link expira em 15 minutos):<br><br>
+            
+            <a href="{link_recuperacao}">{link_recuperacao}</a><br><br>
+            
+            Se você não solicitou essa mudança, por favor, ignore este e-mail. Nenhuma alteração será feita na sua conta.'''
 
-{link_recuperacao}
-
-Se você não solicitou essa mudança, por favor, ignore este e-mail. Nenhuma alteração será feita na sua conta.
-'''
-            mail.send(msg)
+            enviar_email_brevo(email, assunto, corpo_email)
 
             flash('Um link de recuperação foi enviado para seu e-mail.')
             return redirect(url_for('index'))
