@@ -328,7 +328,12 @@ def register():
 
     assunto = 'Confirmação de conta no Chronos'
 
-    corp_email = f'''Olá {usuario}! Bem-vindo ao Chronos. Para ativar sua conta, por favor clique no link abaixo.'''
+    corp_email = f'''
+    Olá <strong>{usuario}</strong>! Bem-vindo ao Chronos.<br><br>
+    Para ativar sua conta e começar a guardar suas memórias, clique no link abaixo:<br><br>
+    <a href="{link_confirmacao}">{link_confirmacao}</a><br><br>
+    Se você não se cadastrou no Chronos, ignore este e-mail.
+    '''
 
     enviar_email_brevo(email, assunto, corp_email)
 
