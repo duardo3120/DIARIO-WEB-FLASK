@@ -154,8 +154,8 @@ def dashboard():
         titulo_pagina = f'Posts de {data_filtro.strftime("%d/%m/%Y")}'
 
     else:
-        # SE NÃO houver nada: mostra tudo
-        posts = Post.query.order_by(Post.dataPost.desc()).paginate(page=page, per_page=5)
+        # Se não houver nada, mostra tudo apenas do usuário logado
+        posts = Post.query.filter(Post.user_id == current_user.id).order_by(Post.dataPost.desc()).paginate(page=page, per_page=5)
         titulo_pagina = 'Timeline'
 
     # Retorna tudo para o template
@@ -382,7 +382,7 @@ def recuperar_senha():
 @app.route('/tag/<tag_name>') #Rota para ver posts por tag
 @login_required
 def posts_by_tag(tag_name):
-    tag = Tag.query.filter_by(name=tag_name).first_or_404() #Verifica se a tag existe, se não existir retorna 404
+    tag = Tag.query.filter_by(name=tag_name, user_id=current_user.id).first_or_404()
     return render_template('dashboard.html', posts=tag.posts, title=f'Tag: {tag_name}') #Renderiza o dashboard com os posts da tag
     
 @app.route('/tags')
